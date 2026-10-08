@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Build-a-Duck</title>
+  <meta name="description" content="Make a pixel rubber duck, give it a personality, and let it squeak at your code.">
+  <meta property="og:title" content="Build-a-Duck">
+  <meta property="og:description" content="Make a pixel rubber duck, give it a personality, and let it squeak at your code.">
+  <meta property="og:url" content="https://bland16.github.io/rubber-duck/">
+  <meta property="og:image" content="https://bland16.github.io/rubber-duck/assets/og.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/app.css">
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <h1>Build-a-Duck</h1>
+    <p>Make a pixel rubber duck, give it a personality, and let it squeak at your code.</p>
+  </header>
+
+  <main id="main">
+    <p id="boot-fallback">Build-a-Duck needs JavaScript and a current browser.</p>
+    <div id="notice" class="notice" hidden></div>
+
+    <div id="maker" class="maker" hidden>
+      <section class="panel" id="section-editor" aria-labelledby="heading-editor">
+        <h2 id="heading-editor"><button type="button" class="section-toggle" aria-expanded="true" aria-controls="body-editor">Editor</button></h2>
+        <div class="panel-body" id="body-editor">
+          <div class="row">
+            <label for="duck-name">Name</label>
+            <input id="duck-name" type="text" maxlength="24" autocomplete="off" placeholder="Duck">
+          </div>
+
+          <fieldset class="group">
+            <legend>Start from a preset</legend>
+            <div id="preset-row" class="preset-row"></div>
+          </fieldset>
+
+          <div class="editor-layout">
+            <div class="grid-column">
+              <fieldset class="group tools">
+                <legend>Tool</legend>
+                <label><input type="radio" name="tool" value="pencil" checked> Pencil</label>
+                <label><input type="radio" name="tool" value="eraser"> Eraser</label>
+                <label><input type="radio" name="tool" value="fill"> Fill</label>
+                <label><input type="radio" name="tool" value="eyedropper"> Eyedropper</label>
+              </fieldset>
+              <div class="row">
+                <button type="button" id="undo">Undo</button>
+                <button type="button" id="redo">Redo</button>
+                <button type="button" id="clear-frame">Clear frame</button>
+              </div>
+              <canvas id="grid" class="grid" width="512" height="512" tabindex="0" role="application"
+                aria-label="Pixel grid for the current frame. Arrow keys move the cursor, Space or Enter applies the tool."></canvas>
+            </div>
+
+            <div class="side-column">
+              <fieldset class="group">
+                <legend>Palette</legend>
+                <div id="palette" class="palette"></div>
+                <button type="button" id="add-colour">Add colour</button>
+              </fieldset>
+
+              <fieldset class="group">
+                <legend>Frames</legend>
+                <div id="frame-strip" class="frame-strip"></div>
+                <div class="row">
+                  <button type="button" id="duplicate-frame">Duplicate frame</button>
+                  <button type="button" id="delete-frame">Delete frame</button>
+                </div>
+              </fieldset>
+            </div>
+          </div>
+
+          <fieldset class="group">
+            <legend>Animations</legend>
+            <div id="animations" class="animations"></div>
+          </fieldset>
+        </div>
+      </section>
+
+      <div class="right-column">
+        <section class="panel" id="section-personality" aria-labelledby="heading-personality">
+          <h2 id="heading-personality"><button type="button" class="section-toggle" aria-expanded="true" aria-controls="body-personality">Personality</button></h2>
+          <div class="panel-body" id="body-personality">
+            <p class="label-line"><strong id="personality-label"></strong> <span id="buddy-badge" class="badge" hidden>Buddy mode</span></p>
+            <ul id="trait-chips" class="chips" aria-label="Traits"></ul>
+            <div id="sliders" class="sliders"></div>
+            <fieldset class="group" id="languages">
+              <legend>Languages your duck checks</legend>
+              <label><input type="checkbox" value="java"> Java</label>
+              <label><input type="checkbox" value="javascript"> JavaScript</label>
+              <label><input type="checkbox" value="python"> Python</label>
+              <label><input type="checkbox" value="c"> C/C++</label>
+            </fieldset>
+            <fieldset class="group" id="roam">
+              <legend>Where it walks</legend>
+              <label><input type="radio" name="roam" value="strip"> Along the bottom</label>
+              <label><input type="radio" name="roam" value="page"> All over the page</label>
+            </fieldset>
+          </div>
+        </section>
+
+        <section class="panel" id="section-export" aria-labelledby="heading-export">
+          <h2 id="heading-export"><button type="button" class="section-toggle" aria-expanded="true" aria-controls="body-export">Export</button></h2>
+          <div class="panel-body" id="body-export">
+            <div class="row">
+              <label for="sheet-scale">Sprite sheet size</label>
+              <select id="sheet-scale"><option value="1">1x</option><option value="4" selected>4x</option><option value="8">8x</option></select>
+              <button type="button" id="export-sheet">Download sprite sheet</button>
+            </div>
+            <div class="row">
+              <label for="gif-animation">GIF animation</label>
+              <select id="gif-animation">
+                <option value="idle">Idle</option><option value="walk" selected>Walk</option><option value="squeak">Squeak</option>
+                <option value="sleep">Sleep</option><option value="thinking">Thinking</option>
+              </select>
+              <label for="gif-scale">Size</label>
+              <select id="gif-scale"><option value="4" selected>4x</option><option value="8">8x</option></select>
+              <button type="button" id="export-gif">Download GIF</button>
+            </div>
+            <div class="row">
+              <button type="button" id="export-card">Download share card</button>
+              <button type="button" id="export-file">Download duck file</button>
+            </div>
+            <div class="row">
+              <label for="import-file">Load duck file</label>
+              <input type="file" id="import-file" accept=".json,application/json">
+            </div>
+            <div class="row">
+              <button type="button" id="copy-link">Copy link</button>
+            </div>
+            <p id="link-note" hidden>This link is long. The duck file is a more reliable way to share this duck.</p>
+            <div id="link-fallback" class="row" hidden>
+              <label for="link-field">Press Ctrl+C to copy</label>
+              <input type="text" id="link-field" readonly>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div id="viewer" class="viewer" hidden>
+      <div id="laptop" class="laptop">
+        <canvas id="laptop-canvas" aria-hidden="true"></canvas>
+        <div id="laptop-screen" class="laptop-screen"></div>
+      </div>
+      <h2 id="viewer-name"></h2>
+      <p class="label-line"><strong id="viewer-label"></strong> <span id="viewer-buddy" class="badge" hidden>Buddy mode</span></p>
+      <ul id="viewer-chips" class="chips" aria-label="Traits"></ul>
+      <p>Build your own on a desktop browser.</p>
+      <div class="row">
+        <button type="button" id="viewer-copy">Copy link</button>
+        <button type="button" id="viewer-mute" aria-pressed="false">Mute</button>
+        <button type="button" id="viewer-pause" aria-pressed="false">Pause motion</button>
+      </div>
+      <div id="viewer-link-fallback" class="row" hidden>
+        <label for="viewer-link-field">Press Ctrl+C to copy</label>
+        <input type="text" id="viewer-link-field" readonly>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <a href="https://github.com/Bland16/rubber-duck">Made by Sarah Bland</a>
+  </footer>
+
+  <div id="stage" class="stage" hidden>
+    <div id="duck-controls" class="duck-controls">
+      <button type="button" id="controls-toggle" aria-expanded="true" aria-controls="controls-body">Duck controls</button>
+      <div id="controls-body" class="controls-body">
+        <button type="button" id="paste-code">Paste code</button>
+        <button type="button" id="mute" aria-pressed="false">Mute</button>
+        <button type="button" id="pause" aria-pressed="false">Pause motion</button>
+        <button type="button" id="theme">Theme</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="duck-layer" class="duck-layer">
+    <button type="button" id="duck" class="duck"><canvas id="duck-canvas" aria-hidden="true"></canvas></button>
+  </div>
+
+  <div id="speech" class="speech" hidden>
+    <p id="speech-text"></p>
+    <div class="speech-buttons">
+      <span id="speech-count" hidden></span>
+      <button type="button" id="speech-action" hidden></button>
+      <button type="button" id="speech-next" hidden>Next</button>
+      <button type="button" id="speech-close" aria-label="Close speech box">Close</button>
+    </div>
+  </div>
+
+  <dialog id="paste-dialog" aria-labelledby="paste-title">
+    <form method="dialog">
+      <h2 id="paste-title">Paste your code</h2>
+      <div class="row">
+        <label for="paste-language">Language</label>
+        <select id="paste-language"></select>
+      </div>
+      <label for="paste-text">Code</label>
+      <textarea id="paste-text" rows="12" spellcheck="false" autocomplete="off"></textarea>
+      <p class="privacy">Syntax check only. Runs in your browser. Your code is not sent anywhere.</p>
+      <div class="row">
+        <button type="submit" value="ask" id="paste-ask">Ask the duck</button>
+        <button type="submit" value="cancel" formnovalidate>Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="confirm-dialog" aria-labelledby="confirm-message">
+    <form method="dialog">
+      <p id="confirm-message" data-role="message"></p>
+      <div class="row">
+        <button type="submit" value="ok" data-role="ok">OK</button>
+        <button type="submit" value="cancel">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="live" class="visually-hidden" aria-live="polite"></div>
+  <div id="grid-live" class="visually-hidden" aria-live="polite"></div>
+</body>
+</html>

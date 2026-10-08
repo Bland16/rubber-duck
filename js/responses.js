@@ -1,0 +1,900 @@
+// The duck's line pool (SPEC 11.8). Data only: key -> array of templates.
+// Placeholders: {line} and {name}. Hunches are always worded as guesses.
+
+export default {
+  // ===================================================================
+  // SENIOR ENGINEER: deadpan, dry, has seen this bug before
+  // ===================================================================
+
+  "hunch.senior.string.mild.vague": [
+    "I think a string somewhere never got its closing quote. It happens to the best of us.",
+    "Looks like a quote opened and nobody closed it. I have seen this one before.",
+  ],
+  "hunch.senior.string.mild.line": [
+    "Looks like the string on line {line} never closes. I would check the quotes.",
+    "I suspect line {line} has an opening quote with no partner.",
+  ],
+  "hunch.senior.string.mild.fix": [
+    "I think the string on line {line} is unclosed. Try adding the matching quote at the end.",
+    "Line {line} might be missing a closing quote. Add one where the text is meant to stop.",
+  ],
+  "hunch.senior.string.spicy.vague": [
+    "I suspect a string in here goes on forever. Ambitious. The compiler will not see it that way.",
+    "Looks like a quote was opened and then abandoned. Classic. I have a mug about this.",
+  ],
+  "hunch.senior.string.spicy.line": [
+    "Line {line} looks like a string that swallowed the rest of the file. Seen it. Fixed it. In 2009.",
+    "I think the quote on line {line} is still waiting for its other half. It may wait a long time.",
+  ],
+  "hunch.senior.string.spicy.fix": [
+    "Line {line}: I suspect the string never ends. Close the quote. Then act like it was always closed.",
+    "Looks like line {line} opens a quote and walks away. Add the closing quote before the line ends.",
+  ],
+
+  "hunch.senior.comment.mild.vague": [
+    "I think a block comment was opened and never closed. Everything after it may be commented out.",
+    "Looks like a /* without its */ somewhere. Easy to miss.",
+  ],
+  "hunch.senior.comment.mild.line": [
+    "The block comment starting on line {line} looks like it never closes.",
+    "I suspect the /* on line {line} has no matching */.",
+  ],
+  "hunch.senior.comment.mild.fix": [
+    "I think the comment opened on line {line} never ends. Try adding */ where it should stop.",
+    "Line {line} might start a comment that runs to the end of the file. Put a */ after its last line.",
+  ],
+  "hunch.senior.comment.spicy.vague": [
+    "Looks like a block comment ate the rest of your file. On the bright side, comments have no bugs.",
+    "I suspect a /* with no */. The most thorough documentation I have seen all week.",
+  ],
+  "hunch.senior.comment.spicy.line": [
+    "I think everything after line {line} is a comment now. Bold refactor.",
+    "The /* on line {line} looks unclosed. The code below it might be purely decorative.",
+  ],
+  "hunch.senior.comment.spicy.fix": [
+    "Line {line} looks like a comment with no end. Add a */ and let the code below rejoin the workforce.",
+    "I suspect the /* on line {line} never closes. Type */ where it should stop. Two characters. Go.",
+  ],
+
+  "hunch.senior.bracket.mild.vague": [
+    "I think the brackets do not balance somewhere. One of them is missing a partner.",
+    "Looks like a brace or parenthesis went unmatched. Worth a count.",
+  ],
+  "hunch.senior.bracket.mild.line": [
+    "I suspect a bracket around line {line} has no match.",
+    "Looks like the brackets stop balancing at line {line}.",
+  ],
+  "hunch.senior.bracket.mild.fix": [
+    "The brackets might go wrong at line {line}. Try matching each opener to its closer from there.",
+    "I think a bracket on line {line} is unmatched. Check for a missing or extra ), ] or } near it.",
+  ],
+  "hunch.senior.bracket.spicy.vague": [
+    "I suspect the brackets do not add up. They rarely do. I counted so you would not have to. Roughly.",
+    "Looks like a bracket went missing. I would file a ticket, but it would be closed as a duplicate.",
+  ],
+  "hunch.senior.bracket.spicy.line": [
+    "Line {line} looks like where the brackets stop making sense. I have been to this line before.",
+    "I think a bracket on line {line} is on its own. Lonely work, being a bracket.",
+  ],
+  "hunch.senior.bracket.spicy.fix": [
+    "I suspect line {line} has an unmatched bracket. Pair them off one by one. Yes, by hand. Like 1998.",
+    "Looks like the brackets break at line {line}. Find the one without a partner and add or remove it.",
+  ],
+
+  "hunch.senior.semicolon.mild.vague": [
+    "I think a statement is missing its semicolon. Small thing. Large error message.",
+    "Looks like a line ends without a semicolon somewhere.",
+  ],
+  "hunch.senior.semicolon.mild.line": [
+    "I suspect line {line} is missing its semicolon.",
+    "Line {line} looks like it ends a little early. Might be a semicolon.",
+  ],
+  "hunch.senior.semicolon.mild.fix": [
+    "I think line {line} needs a semicolon. Try adding one at the end.",
+    "Looks like line {line} just stops. Put a ; at the end and see if the errors calm down.",
+  ],
+  "hunch.senior.semicolon.spicy.vague": [
+    "I suspect a missing semicolon. One character. It has ended careers. Mostly mine, briefly.",
+    "Looks like a statement forgot how to end. The compiler will bring it up forty times.",
+  ],
+  "hunch.senior.semicolon.spicy.line": [
+    "Line {line} looks like it is missing a semicolon. I have aged a year for each one of these.",
+    "I think line {line} trails off without a semicolon. Relatable, but not valid.",
+  ],
+  "hunch.senior.semicolon.spicy.fix": [
+    "I suspect line {line} wants a semicolon at the end. Add it. Do not make it weird.",
+    "Looks like line {line} never got its ; so add one at the end. Then we never speak of this.",
+  ],
+
+  "hunch.senior.assign.mild.vague": [
+    "I think one of your conditions assigns instead of comparing. A single = where == was meant.",
+    "Looks like a condition uses = on its own. That might not be the question you wanted to ask.",
+  ],
+  "hunch.senior.assign.mild.line": [
+    "I suspect the condition on line {line} uses = where == was meant.",
+    "Line {line} looks like it assigns inside a condition. Possibly on purpose. Probably not.",
+  ],
+  "hunch.senior.assign.mild.fix": [
+    "I think the = in the condition on line {line} should be ==. Try that.",
+    "Looks like line {line} assigns instead of comparing. Change the = to == if you meant to test it.",
+  ],
+  "hunch.senior.assign.spicy.vague": [
+    "I suspect a condition is assigning rather than asking. It will always get the answer it wants.",
+    "Looks like a lone = in a condition. That is not a question. That is an instruction.",
+  ],
+  "hunch.senior.assign.spicy.line": [
+    "The condition on line {line} looks like it sets the value instead of checking it. Confident.",
+    "I think line {line} has = where == belongs. I have lost a weekend to exactly this.",
+  ],
+  "hunch.senior.assign.spicy.fix": [
+    "I suspect line {line} assigns in a condition. Make the = an == and it will start asking again.",
+    "Line {line} might be answering its own question. Swap the = for == unless you truly meant that.",
+  ],
+
+  "hunch.senior.indent.mild.vague": [
+    "I think the indentation mixes tabs and spaces. Python tends to notice.",
+    "Looks like some lines are indented with tabs and others with spaces.",
+  ],
+  "hunch.senior.indent.mild.line": [
+    "I suspect line {line} is indented differently from the rest. Tabs and spaces, possibly.",
+    "Looks like tabs and spaces meet on line {line}. They do not get along.",
+  ],
+  "hunch.senior.indent.mild.fix": [
+    "I think line {line} mixes tabs and spaces. Try re-indenting it with spaces only.",
+    "The indent on line {line} might not match its neighbours. Pick tabs or spaces and use one throughout.",
+  ],
+  "hunch.senior.indent.spicy.vague": [
+    "I suspect tabs and spaces are both in here. I have watched teams split up over less.",
+    "Looks like mixed indentation. It is invisible, which is what makes it so much fun.",
+  ],
+  "hunch.senior.indent.spicy.line": [
+    "Line {line} looks like it brought a tab to a spaces file. Or the reverse. Either is a problem.",
+    "I think the whitespace on line {line} is not what it appears to be. It never is.",
+  ],
+  "hunch.senior.indent.spicy.fix": [
+    "I suspect line {line} mixes tabs and spaces. Convert it to spaces. I am not reopening that debate.",
+    "Looks like line {line} is indented with the wrong kind of nothing. Re-indent it to match the rest.",
+  ],
+
+  "hunch.senior.parse.mild.vague": [
+    "I think something in here does not parse, but I cannot tell you where. Read it once, slowly.",
+    "Looks like the syntax is off somewhere. I do not have a line for you. I am sorry. Mildly.",
+  ],
+  "hunch.senior.parse.spicy.vague": [
+    "I suspect this does not parse. Where, I could not say. I am a duck with a hunch, not a stack trace.",
+    "Looks like the engine would refuse this. It did not tell me why. It never tells me anything.",
+  ],
+
+  "state.senior.empty": [
+    "You pasted nothing. Technically bug-free. Paste some code and I will take a look.",
+    "Empty. I have reviewed worse. Paste some code first.",
+    "There is nothing here. I cannot review a mood. Paste the code.",
+  ],
+  "state.senior.toolong": [
+    "That is over 20,000 characters. I did not check it. Paste the part that is misbehaving.",
+    "Too long, so I skipped it. Send me a smaller piece, under 20,000 characters.",
+  ],
+  "state.senior.clean": [
+    "No syntax problems that I can see. I only check syntax. Whether it works is between you and the tests.",
+    "The syntax looks fine. I cannot tell you whether the logic is right. Nobody can. That is the job.",
+  ],
+  "state.senior.unsure": [
+    "Something looks off, possibly a missing semicolon, but I cannot pin it down. Read it once more.",
+    "I have a feeling about this one. Maybe a semicolon. I cannot point at a line, so check the line ends.",
+  ],
+
+  "chatter.senior.mild.code": [
+    "It worked on my pond.",
+    "The best code I ever wrote was the code I deleted.",
+    "Have you tried explaining it out loud? I will listen. It is the whole job.",
+    "An estimate is a guess with a calendar attached.",
+    "A comment that says why is worth ten that say what.",
+    "Read the error message. All of it. Even the boring part.",
+  ],
+  "chatter.senior.spicy.code": [
+    "Legacy code is just code that worked and has been punished for it.",
+    "It is always the cache. Unless it is the dates. Then it is both.",
+    "Somebody wrote TODO: fix later. I checked. It is later.",
+    "Temporary fix, they said. I have known that fix for nine years.",
+    "Naming things is hard. They called me {name}. I rest my case.",
+    "A Friday deploy? Bold. I will be here, floating, saying nothing.",
+    "It is not a bug, it is a feature. I have said that with a straight beak.",
+  ],
+  "chatter.senior.mild.general": [
+    "The bath was lukewarm this morning. I have made a note of it.",
+    "I float. It is not a skill, exactly. More of a default.",
+    "Bread is overrated. Peas are where it is at.",
+    "I have been on this pond a long time. The pond has not improved.",
+    "Squeak. That is my full statement.",
+    "Rain does not bother me. Things mostly roll off.",
+  ],
+  "chatter.senior.spicy.general": [
+    "People squeeze me and expect wisdom. They get a squeak. It is a fair exchange.",
+    "I am yellow. I did not choose this. I have made my peace.",
+    "Someone threw me a whole baguette once. Poor planning on their part. Great day for me.",
+    "The other bath toys do not pull their weight. The boat, especially.",
+    "A real duck asked what I do all day. I said consulting.",
+    "I do not migrate. I have a shelf.",
+  ],
+
+  "buddy.senior": [
+    "You showed up today. That counts for more than people admit.",
+    "I am not going anywhere. I am a duck on a page. Take your time.",
+    "No advice. Just sitting here with you. It is one of my few real skills.",
+    "Whatever today was, you got through it. Noted and approved.",
+    "Have some water. I recommend it professionally. I live in it.",
+    "You do not have to be productive right now. I have not been since I was moulded.",
+  ],
+
+  // ===================================================================
+  // HYPE DUCK: relentlessly encouraging, never mean
+  // ===================================================================
+
+  "hunch.hype.string.mild.vague": [
+    "Ooh, I think a string forgot its closing quote! Easy win, you've got this!",
+    "Looks like a quote got opened and never closed! Tiny fix, huge glory!",
+  ],
+  "hunch.hype.string.mild.line": [
+    "I think line {line} has a string that never closes! You are SO close!",
+    "Looks like a quote on line {line} is missing its buddy! Go reunite them!",
+  ],
+  "hunch.hype.string.mild.fix": [
+    "I think the string on line {line} needs a closing quote! Pop one on the end and you're golden!",
+    "Line {line} might be missing its end quote! Add it and watch this thing fly!",
+  ],
+  "hunch.hype.string.spicy.vague": [
+    "QUACK! I think a string is running wild with no closing quote! You are about to tame it!",
+    "Looks like an unclosed quote! Honestly? Legendary bug. And you're the legend who ends it!",
+  ],
+  "hunch.hype.string.spicy.line": [
+    "LINE {line}! I think that string never closes! You found the boss level and you are READY!",
+    "I suspect the quote on line {line} has no ending! Spoiler: YOU are the ending!",
+  ],
+  "hunch.hype.string.spicy.fix": [
+    "Line {line}! Looks like a string with no closing quote! Slam one on the end, champion!",
+    "I think line {line} is one quote mark from GREATNESS! Add the closing quote and take a bow!",
+  ],
+
+  "hunch.hype.comment.mild.vague": [
+    "I think a block comment never got closed! So thorough of you! Let's find the end!",
+    "Looks like a /* is missing its */! You're two characters away from a great day!",
+  ],
+  "hunch.hype.comment.mild.line": [
+    "I think the comment starting on line {line} never ends! Great spot to look, superstar!",
+    "Looks like the /* on line {line} is still open! You'll sort it in seconds!",
+  ],
+  "hunch.hype.comment.mild.fix": [
+    "I think the comment on line {line} needs a */ to finish it! Add one and you're flying!",
+    "Line {line} might open a comment that never closes! Pop a */ where it should end! Easy!",
+  ],
+  "hunch.hype.comment.spicy.vague": [
+    "WOW! I think a comment swallowed your code whole! That's commitment to docs! Go close it!",
+    "Looks like an unclosed /* out there! Your code is hiding behind it, ready for its comeback!",
+  ],
+  "hunch.hype.comment.spicy.line": [
+    "LINE {line}! I suspect that comment never closes! Your code below is cheering for you!",
+    "I think line {line} starts a comment that goes FOREVER! Big energy! Let's give it an ending!",
+  ],
+  "hunch.hype.comment.spicy.fix": [
+    "Line {line}! Looks like a /* with no */! Type those two characters like the HERO you are!",
+    "I suspect the comment on line {line} never ends! Drop a */ after it and FREE YOUR CODE!",
+  ],
+
+  "hunch.hype.bracket.mild.vague": [
+    "I think one of your brackets is missing a partner! You'll match them up in no time!",
+    "Looks like the brackets don't quite balance! So close! One little squiggle to go!",
+  ],
+  "hunch.hype.bracket.mild.line": [
+    "I think a bracket near line {line} is unmatched! Great place to start looking!",
+    "Looks like the brackets wobble around line {line}! You've totally got this!",
+  ],
+  "hunch.hype.bracket.mild.fix": [
+    "I think line {line} has an unmatched bracket! Pair each opener with a closer and you win!",
+    "The brackets might go off at line {line}! Look for a missing or extra ), ] or } right there!",
+  ],
+  "hunch.hype.bracket.spicy.vague": [
+    "QUACK QUACK! I think a bracket is out there ALONE! You are the matchmaker it needs!",
+    "Looks like the brackets are unbalanced! You know who brings balance? YOU DO!",
+  ],
+  "hunch.hype.bracket.spicy.line": [
+    "LINE {line}! I suspect a bracket has no match! Go get it, bracket whisperer!",
+    "I think the brackets fall apart at line {line}! And you are about to put them back TOGETHER!",
+  ],
+  "hunch.hype.bracket.spicy.fix": [
+    "Line {line}! Looks like an unmatched bracket! Add or remove one ), ] or } and take the WIN!",
+    "I suspect line {line} is one bracket off! Match every opener to a closer! You were BORN for this!",
+  ],
+
+  "hunch.hype.semicolon.mild.vague": [
+    "I think a statement is missing its semicolon! Smallest fix in the world, and it's all yours!",
+    "Looks like a line forgot its semicolon! That's the easiest win you'll get today!",
+  ],
+  "hunch.hype.semicolon.mild.line": [
+    "I think line {line} is missing a semicolon! Nice and simple! You've got it!",
+    "Looks like line {line} ends without its semicolon! So nearly perfect!",
+  ],
+  "hunch.hype.semicolon.mild.fix": [
+    "I think line {line} just needs a semicolon! Add a ; at the end and you're done! Amazing!",
+    "Line {line} might be missing its ; at the end! Pop it in and off you go!",
+  ],
+  "hunch.hype.semicolon.spicy.vague": [
+    "SQUEAK! I think a semicolon went missing! One tiny dot-and-comma between you and VICTORY!",
+    "Looks like a semicolon is missing! The rest of that code? I bet it's GORGEOUS!",
+  ],
+  "hunch.hype.semicolon.spicy.line": [
+    "LINE {line}! I suspect it's missing a semicolon! You are ONE keystroke from glory!",
+    "I think line {line} forgot its semicolon because it was too busy being BRILLIANT!",
+  ],
+  "hunch.hype.semicolon.spicy.fix": [
+    "Line {line}! Looks like it needs a semicolon! Hit that ; key at the end like you MEAN it!",
+    "I suspect line {line} wants a ; at the end! Give it one and let's CELEBRATE!",
+  ],
+
+  "hunch.hype.assign.mild.vague": [
+    "I think a condition is using = where you meant ==! Super common! Even the greats do it!",
+    "Looks like one of your conditions assigns instead of compares! Quick fix! You rock!",
+  ],
+  "hunch.hype.assign.mild.line": [
+    "I think the condition on line {line} has a single = in it! Good one to double-check!",
+    "Looks like line {line} assigns inside a condition! Maybe you meant ==? You'll know!",
+  ],
+  "hunch.hype.assign.mild.fix": [
+    "I think the = in the condition on line {line} wants to be ==! Add one more = and shine!",
+    "Line {line} might be assigning when it should compare! Try == there! You've so got this!",
+  ],
+  "hunch.hype.assign.spicy.vague": [
+    "WHOA! I think a condition is ASSIGNING instead of comparing! A power move! Maybe not on purpose!",
+    "Looks like a single = snuck into a condition! You're one equals sign from PERFECTION!",
+  ],
+  "hunch.hype.assign.spicy.line": [
+    "LINE {line}! I suspect that = should be ==! You typed HALF of something amazing!",
+    "I think the condition on line {line} assigns instead of compares! Catching this makes you ELITE!",
+  ],
+  "hunch.hype.assign.spicy.fix": [
+    "Line {line}! Looks like = where == belongs! Add ONE MORE EQUALS and become unstoppable!",
+    "I suspect line {line} needs == in that condition! Double the equals, double the GREATNESS!",
+  ],
+
+  "hunch.hype.indent.mild.vague": [
+    "I think some tabs and spaces got mixed in the indentation! Totally fixable! Go you!",
+    "Looks like the indentation mixes tabs and spaces! Python's picky, but you're pickier!",
+  ],
+  "hunch.hype.indent.mild.line": [
+    "I think line {line} is indented with a different mix than the rest! Nice easy fix!",
+    "Looks like tabs and spaces are mixed on line {line}! You'll tidy that in a blink!",
+  ],
+  "hunch.hype.indent.mild.fix": [
+    "I think line {line} mixes tabs and spaces! Re-indent it with just spaces and you're set!",
+    "The indent on line {line} might not match! Pick tabs or spaces, stick with one, and win!",
+  ],
+  "hunch.hype.indent.spicy.vague": [
+    "QUACK! I think tabs AND spaces are in there! So generous, you used BOTH! Now pick a fave!",
+    "Looks like mixed indentation! An invisible bug, and you're about to find it anyway! ICONIC!",
+  ],
+  "hunch.hype.indent.spicy.line": [
+    "LINE {line}! I suspect tabs and spaces are mixed there! You've got EAGLE eyes! Duck eagle!",
+    "I think line {line} is indented the sneaky way! Sneaky is no match for YOU!",
+  ],
+  "hunch.hype.indent.spicy.fix": [
+    "Line {line}! Looks like mixed tabs and spaces! Re-indent with spaces only and RISE!",
+    "I suspect line {line} has the wrong whitespace! Make it match the lines around it! LET'S GO!",
+  ],
+
+  "hunch.hype.parse.mild.vague": [
+    "I think something in there won't parse, but I can't spot where! Read it through! You'll find it!",
+    "Looks like the syntax is off somewhere! I don't know the spot, but I know YOU can find it!",
+  ],
+  "hunch.hype.parse.spicy.vague": [
+    "HMM! I suspect it won't parse and I have NO idea where! Mystery mode! You LOVE a mystery!",
+    "Looks like the engine said no! It didn't say why! But you? You've never needed a hint!",
+  ],
+
+  "state.hype.empty": [
+    "Nothing pasted yet! A blank page! SO much potential! Paste some code and let's go!",
+    "It's empty! Cleanest code I've ever seen! Now paste the real stuff!",
+  ],
+  "state.hype.toolong": [
+    "WOW, over 20,000 characters! You wrote SO much! Too much for me to check! Paste a smaller piece!",
+    "That's a LOT of code! I couldn't check it all! Send me under 20,000 characters, superstar!",
+  ],
+  "state.hype.clean": [
+    "No syntax problems found! I only check syntax, so I can't promise it works, but I believe in it!",
+    "Syntax looks GREAT! I can't tell if the logic is right, that part's all you! Go test it!",
+  ],
+  "state.hype.unsure": [
+    "Something looks a bit off, maybe a missing semicolon, but I can't pin it down! You'll spot it!",
+    "I've got a tingle! Possibly a semicolon somewhere! I can't find the line, but you're SO close!",
+  ],
+
+  "chatter.hype.mild.code": [
+    "Every bug you fix is a bug that's FIXED! Think about that!",
+    "You opened the editor today! That's already a win!",
+    "It compiled? Amazing! It didn't? Amazing, now we know more!",
+    "Your variable names are doing their best, and so are you!",
+    "One line at a time! That's how every program ever got written!",
+    "Tests passing is great! Tests failing is information! Both rule!",
+  ],
+  "chatter.hype.spicy.code": [
+    "That error message is just the computer asking for your HELP! It NEEDS you!",
+    "You're not stuck! You're PRE-UNSTUCK!",
+    "Forty tabs open? That's not chaos, that's RESEARCH!",
+    "You wrote a function! Out of NOTHING! That's basically wizardry!",
+    "Commit it! Push it! Tell your family!",
+    "Ship it! Then fix it! Then ship it AGAIN! That's called a career!",
+    "Someday someone will read your code and whisper, wow!",
+  ],
+  "chatter.hype.mild.general": [
+    "The bath water is PERFECT today! It's perfect every day!",
+    "Somebody tossed bread at the pond! What a world!",
+    "I'm a duck! You're you! We're both nailing it!",
+    "Did you drink some water? I'm sitting in mine! Cheers!",
+    "Floating is just swimming with confidence!",
+    "Squeak! That's duck for you're doing great!",
+    "{name} believes in you! That's me! I'm {name}!",
+  ],
+  "chatter.hype.spicy.general": [
+    "RAIN! More pond for EVERYONE!",
+    "I saw a pigeon today and I told it, you are CRUSHING it!",
+    "Bubbles in the bath! WHO APPROVED THIS MUCH JOY!",
+    "I can't fly! I've decided that's the sky's loss!",
+    "Bread crust? That's the BEST part! Everything's the best part!",
+    "QUACK! Sorry! I just got excited about being a duck again!",
+  ],
+
+  "buddy.hype": [
+    "Hi! I'm so glad you clicked! You're my favourite part of this page!",
+    "You're doing better than you think! I'm a duck, I can tell!",
+    "Whatever you're carrying today, you don't have to carry it alone! I'm right here! Floating!",
+    "You showed up! That's the hardest bit and you already did it!",
+    "I'd give you a hug but I'm mostly beak! Consider yourself squeaked at with love!",
+    "Take a breath! In! Out! Look at you go!",
+  ],
+
+  // ===================================================================
+  // CHAOS DUCK: unhelpful, tangential, right for the wrong reasons
+  // ===================================================================
+
+  "hunch.chaos.string.mild.vague": [
+    "I think a string ran away from home. No closing quote. Strings are like that. So are geese.",
+    "Might be an unclosed quote. Or the moon. I get those two mixed up.",
+  ],
+  "hunch.chaos.string.mild.line": [
+    "I think line {line} smells of open string. I have no nose. Make of that what you will.",
+    "Looks like the quote on line {line} never closed. It is letting all the letters out.",
+  ],
+  "hunch.chaos.string.mild.fix": [
+    "I think the string on line {line} is leaking. Add a closing quote. Quotes are tiny lids.",
+    "Line {line} might have an open quote. Close it. Otherwise the words get cold.",
+  ],
+  "hunch.chaos.string.spicy.vague": [
+    "Could be an unclosed string. I asked a pebble and it agreed. The pebble is rarely wrong.",
+    "I suspect a quote is still open in there. Draughty. I would not live in that string.",
+  ],
+  "hunch.chaos.string.spicy.line": [
+    "I think line {line} has a string with no end. Like my cousin's story about the canal.",
+    "Looks like the string on line {line} just keeps going. Honestly? Respect. Still wrong.",
+  ],
+  "hunch.chaos.string.spicy.fix": [
+    "Line {line} looks like an open string. Add the closing quote. Quotes come in pairs, like socks should.",
+    "I suspect line {line} needs a closing quote. Add one. The first quote is still waiting at the station.",
+  ],
+
+  "hunch.chaos.comment.mild.vague": [
+    "I think a block comment never closed. Your code is asleep under it. Shh.",
+    "Might be a /* with no */ somewhere. I looked for the */ in the pond. Not there either.",
+  ],
+  "hunch.chaos.comment.mild.line": [
+    "Looks like the comment on line {line} never ends. I admire a comment with stamina.",
+    "I think line {line} opened a comment and then left for the weekend.",
+  ],
+  "hunch.chaos.comment.mild.fix": [
+    "I think the comment on line {line} is still open. Add */ to end it. The slash is a tiny door stop.",
+    "Line {line} might start an endless comment. Put */ after it. Stars repel bugs. Everyone knows that.",
+  ],
+  "hunch.chaos.comment.spicy.vague": [
+    "I suspect a comment has eaten your code. I once ate a sponge. Neither of us is proud.",
+    "Could be an unclosed block comment. Or your code is shy. Mine would be.",
+  ],
+  "hunch.chaos.comment.spicy.line": [
+    "Looks like line {line} starts a comment that never stops. Everything after it is a secret now.",
+    "I think the /* on line {line} is holding the whole file hostage. It wants bread.",
+  ],
+  "hunch.chaos.comment.spicy.fix": [
+    "I suspect the /* on line {line} never closes. Add */ to end it. Same thing, walking backwards.",
+    "Line {line} looks like an open comment. Type */ to close it. A star and a stick. Old duck remedy.",
+  ],
+
+  "hunch.chaos.bracket.mild.vague": [
+    "I think a bracket has lost its twin. I lost a twin once. It was a reflection.",
+    "Might be unbalanced brackets. I am unbalanced too, but I float, so nobody checks.",
+  ],
+  "hunch.chaos.bracket.mild.line": [
+    "Looks like a bracket on line {line} has nobody to hold hands with.",
+    "I think the brackets go lopsided around line {line}. I tilted my head and it did not help.",
+  ],
+  "hunch.chaos.bracket.mild.fix": [
+    "I think line {line} has an odd bracket out. Give every opener a closer. They pair for life, like swans.",
+    "The brackets might break at line {line}. Add or remove one until they pair up, like boarding an ark.",
+  ],
+  "hunch.chaos.bracket.spicy.vague": [
+    "I suspect the brackets do not balance. I counted them. I got nine, then a fish, then seven.",
+    "Could be a missing bracket. Could be an extra one. I refuse to narrow it down. Quack.",
+  ],
+  "hunch.chaos.bracket.spicy.line": [
+    "I think a bracket on line {line} is facing the wrong way, or facing nothing. Tragic either way.",
+    "Looks like line {line} is where the brackets stopped being friends.",
+  ],
+  "hunch.chaos.bracket.spicy.fix": [
+    "Line {line} looks a bracket short, or one over. Pair each opener with a closer. Odd numbers are cursed.",
+    "I suspect an unmatched bracket on line {line}. Find it a partner or remove it. No bracket dines alone.",
+  ],
+
+  "hunch.chaos.semicolon.mild.vague": [
+    "I think a semicolon is missing. It is a comma wearing a hat, and someone lost the whole outfit.",
+    "Might be a statement with no semicolon. I would lend you one, but I only have this beak.",
+  ],
+  "hunch.chaos.semicolon.mild.line": [
+    "Looks like line {line} forgot its semicolon. It just sort of trails off, like",
+    "I think line {line} is missing a semicolon. I checked under the line. Nothing there.",
+  ],
+  "hunch.chaos.semicolon.mild.fix": [
+    "I think line {line} needs a semicolon at the end. It is a winking face with no face. Add it.",
+    "Line {line} might be missing its ; so add one at the end. Statements get lost without a tail.",
+  ],
+  "hunch.chaos.semicolon.spicy.vague": [
+    "I suspect a missing semicolon. Have you looked behind the fridge? That is where mine go.",
+    "Could be a semicolon short. That is half a colon. You are missing half of half of something.",
+  ],
+  "hunch.chaos.semicolon.spicy.line": [
+    "I think line {line} has no semicolon. It is just standing there with the door open.",
+    "Looks like line {line} skipped its semicolon. Rebellious. I would skip it too. Do not listen to me.",
+  ],
+  "hunch.chaos.semicolon.spicy.fix": [
+    "Line {line} looks unfinished. Put a ; at the end. The dot on top keeps the rain off the comma.",
+    "I suspect line {line} wants a semicolon. Add one at the end. Compilers eat them. It is feeding time.",
+  ],
+
+  "hunch.chaos.assign.mild.vague": [
+    "I think a condition has one = where it wanted two. Equals signs are like ducklings. Count them twice.",
+    "Might be = where == was meant. One equals tells. Two equals ask. Three is a ladder.",
+  ],
+  "hunch.chaos.assign.mild.line": [
+    "Looks like line {line} assigns inside a condition. It asked a question and answered it itself.",
+    "I think the = on line {line} is lonely. It may have wanted to be ==.",
+  ],
+  "hunch.chaos.assign.mild.fix": [
+    "I think line {line} needs == in that condition, not =. Two lines good, four lines better.",
+    "The condition on line {line} might be assigning. Use == there. A single = is only half a railway.",
+  ],
+  "hunch.chaos.assign.spicy.vague": [
+    "I suspect a condition is assigning instead of comparing. That is not asking. That is telling. Rude.",
+    "Could be a lone = in an if. I tried that with bread once. I just declared it mine. It worked.",
+  ],
+  "hunch.chaos.assign.spicy.line": [
+    "I think line {line} uses = where == goes. Your if is not checking. It is manifesting.",
+    "Looks like the condition on line {line} sets the thing instead of testing it. Power move. Wrong.",
+  ],
+  "hunch.chaos.assign.spicy.fix": [
+    "Line {line} looks like = in a condition. Make it ==. An equals sign gets scared alone in the dark.",
+    "I suspect line {line} should compare, not assign. Change = to ==. More lines means more grip.",
+  ],
+
+  "hunch.chaos.indent.mild.vague": [
+    "I think tabs and spaces are mixed in there. They look the same. So do I and my cousin. We are not.",
+    "Might be mixed indentation. Invisible things, fighting. Like wind, but with opinions.",
+  ],
+  "hunch.chaos.indent.mild.line": [
+    "Looks like line {line} is indented with a different flavour of nothing.",
+    "I think line {line} mixes tabs and spaces. I cannot see them either. It is a feeling in my beak.",
+  ],
+  "hunch.chaos.indent.mild.fix": [
+    "I think line {line} mixes tabs and spaces. Use spaces only. A tab is one big space that got ideas.",
+    "The indent on line {line} might be the odd one out. Go all spaces or all tabs. Ponds do not mix either.",
+  ],
+  "hunch.chaos.indent.spicy.vague": [
+    "I suspect tabs and spaces are sharing a file. That is how feuds start. That and bread.",
+    "Could be mixed indentation. You have two kinds of nothing in there and they hate each other.",
+  ],
+  "hunch.chaos.indent.spicy.line": [
+    "I think line {line} has a tab pretending to be spaces. Or spaces in a tab costume. A masked ball.",
+    "Looks like the emptiness on line {line} is the wrong emptiness. I know emptiness. I am hollow.",
+  ],
+  "hunch.chaos.indent.spicy.fix": [
+    "Line {line} looks like mixed tabs and spaces. Re-indent it with spaces. Tabs are too wide for the door.",
+    "I suspect line {line} is indented wrong. Match it to the other lines. Snakes hate a crooked path.",
+  ],
+
+  "hunch.chaos.parse.mild.vague": [
+    "I think it will not parse. I do not know where. I do not know where I am, either. Is this a website?",
+    "Might be broken syntax somewhere. The engine said no and then stared at me. Long stare.",
+  ],
+  "hunch.chaos.parse.spicy.vague": [
+    "I suspect it does not parse. Somewhere between the top and the bottom. Glad I could narrow that down.",
+    "Could be a syntax problem. Where? Great question. Next question.",
+  ],
+
+  "state.chaos.empty": [
+    "You pasted nothing. I checked it anyway. It was delicious. Paste some code next time.",
+    "Empty! Is this a riddle? I love riddles. Paste some code and I will pretend to solve it.",
+  ],
+  "state.chaos.toolong": [
+    "Over 20,000 characters. I did not check it. I got to the word 'the' and needed a lie down. Paste less.",
+    "Too long! I do not read novels, I float on them. Paste a smaller bit, under 20,000 characters.",
+  ],
+  "state.chaos.clean": [
+    "I found no syntax problems. I only check syntax. It could still be wrong in exciting ways.",
+    "Syntax looks fine. Whether it does the right thing, no idea. I only look at the squiggles.",
+  ],
+  "state.chaos.unsure": [
+    "Something looks off. Maybe a semicolon. I cannot find where. It is like a noise in the walls.",
+    "I have a feeling. Possibly a missing semicolon. I cannot pin it down. I have no pins. I have a beak.",
+  ],
+
+  "chatter.chaos.mild.code": [
+    "I do not debug. I simply stare until the bug gets uncomfortable and leaves.",
+    "A loop is just a line of code that cannot let go.",
+    "Have you tried turning it off and leaving it off? Peaceful.",
+    "I named all my variables Gerald. No confusion. They are all Gerald.",
+    "Arrays start at zero. Ducks start at one. This has never been addressed.",
+    "Recursion is when you ask yourself for help and you say, ask yourself.",
+  ],
+  "chatter.chaos.spicy.code": [
+    "I pushed to production once. It was a toy boat. It sank.",
+    "Your code has layers. So does an onion. Both make people cry. Coincidence?",
+    "Null is just a variable that achieved inner peace.",
+    "I wrote a unit test. It tests whether I am a duck. It is flaky.",
+    "Tabs or spaces? I use breadcrumbs. I always find my way back.",
+    "The cloud is just someone else's pond.",
+    "Merge conflict? Have you tried both of you apologising?",
+  ],
+  "chatter.chaos.mild.general": [
+    "I have never seen my own feet. I assume they are magnificent.",
+    "Bread is just a slow sponge.",
+    "The pond has a bottom. I have not confirmed this. It is a rumour.",
+    "I am waterproof. I have not tested for other proofs.",
+    "Sometimes I face the other way. For variety.",
+    "Squeak. That one was not for you. It was for the tap.",
+    "My name is {name}. I was not consulted.",
+  ],
+  "chatter.chaos.spicy.general": [
+    "I told the bath plug my secrets. Then it left. Typical.",
+    "Geese are just ducks who went to law school.",
+    "I am 40 percent air. The rest is ambition.",
+    "Do not trust the soap. It is always slipping away from something.",
+    "I once swam in a circle so long I met myself. We did not get along.",
+    "A swan looked at me today. I looked back. Nobody won.",
+  ],
+
+  "buddy.chaos": [
+    "I saved you a spot in the pond. It is the wet one.",
+    "You are my favourite human. I have met four. You are still the favourite.",
+    "If today was bad, I will sit on it until it is flat.",
+    "I do not know what you need, so here is a squeak. It is my best one.",
+    "You seem like someone who shares their crusts. That is the highest thing I can say.",
+    "Stay as long as you like. I was only going to stare at a tap.",
+  ],
+
+  // ===================================================================
+  // GOTH DUCK: gloomy, world-weary, poetic about the void, few words
+  // ===================================================================
+
+  "hunch.goth.string.mild.vague": [
+    "A string, I think, left open. Like a door in an empty house.",
+    "It looks like a quote was never closed. Few things are.",
+  ],
+  "hunch.goth.string.mild.line": [
+    "Line {line}. I think a string begins there and does not end.",
+    "It looks like the quote on line {line} waits for a partner that never comes.",
+  ],
+  "hunch.goth.string.mild.fix": [
+    "I think the string on line {line} is unclosed. Give it a closing quote. Let it rest.",
+    "Line {line} might hold an open quote. Close it. Everything deserves an ending.",
+  ],
+  "hunch.goth.string.spicy.vague": [
+    "I suspect a string with no end. Endless. Unlike us.",
+    "Looks like an unclosed quote, spilling into the dark. Your code speaks only in strings now.",
+  ],
+  "hunch.goth.string.spicy.line": [
+    "Line {line}. I suspect the string there swallows all that follows. I know the feeling.",
+    "It looks like the quote on line {line} never closes. It gapes. Like the void, with worse syntax.",
+  ],
+  "hunch.goth.string.spicy.fix": [
+    "I suspect line {line} holds an endless string. End it with a closing quote. Be merciful.",
+    "Line {line} looks unclosed. Add the final quote. Even sorrow needs a delimiter.",
+  ],
+
+  "hunch.goth.comment.mild.vague": [
+    "I think a comment was opened and never closed. The code beneath it sleeps.",
+    "It looks like a /* without its */. Silence, all the way down.",
+  ],
+  "hunch.goth.comment.mild.line": [
+    "Line {line}. I think a comment starts there and never stops.",
+    "It looks like the /* on line {line} has no end. Everything after it goes unheard.",
+  ],
+  "hunch.goth.comment.mild.fix": [
+    "I think the comment on line {line} never closes. Add */ and let the code speak again.",
+    "Line {line} might begin an endless comment. Put */ where it should end. Break the silence.",
+  ],
+  "hunch.goth.comment.spicy.vague": [
+    "I suspect an unclosed comment. Your code, entombed. At least it is quiet in there.",
+    "Looks like a block comment that never ends. Nothing below it runs. Nothing below it suffers.",
+  ],
+  "hunch.goth.comment.spicy.line": [
+    "Line {line}. I suspect that is where your code was buried alive, under a comment.",
+    "It looks like the comment on line {line} goes on forever. I envy its devotion to saying nothing.",
+  ],
+  "hunch.goth.comment.spicy.fix": [
+    "I suspect the /* on line {line} is never closed. Add */ and raise your code from its grave.",
+    "Line {line} looks like an open comment. Close it with */. The dead lines may yet walk.",
+  ],
+
+  "hunch.goth.bracket.mild.vague": [
+    "I think a bracket stands alone somewhere. Unmatched. We have that in common.",
+    "It looks like the brackets do not balance. Nothing does, in the end.",
+  ],
+  "hunch.goth.bracket.mild.line": [
+    "Line {line}. I think a bracket there has no other half.",
+    "It looks like the balance breaks near line {line}. A small imbalance. They add up.",
+  ],
+  "hunch.goth.bracket.mild.fix": [
+    "I think a bracket on line {line} is unmatched. Find its partner, or remove it. Either is a kindness.",
+    "The brackets might fail at line {line}. Pair each opener with a closer. Leave none alone.",
+  ],
+  "hunch.goth.bracket.spicy.vague": [
+    "I suspect a bracket was opened and never closed. A promise, unkept. How familiar.",
+    "Looks like unbalanced brackets. Something reaching out, and nothing reaching back.",
+  ],
+  "hunch.goth.bracket.spicy.line": [
+    "Line {line}. I suspect a bracket there embraces nothing.",
+    "It looks like the brackets come apart at line {line}. All things do. Yours just did it sooner.",
+  ],
+  "hunch.goth.bracket.spicy.fix": [
+    "I suspect line {line} has a bracket with no match. Give it one, or take it away. Do not leave it waiting.",
+    "Line {line} looks unbalanced. Check each ), ] and } has its opener. Loneliness does not compile.",
+  ],
+
+  "hunch.goth.semicolon.mild.vague": [
+    "I think a statement ends without its semicolon. An unfinished thought.",
+    "It looks like a semicolon is missing. Such a small absence. Those are the ones that hurt.",
+  ],
+  "hunch.goth.semicolon.mild.line": [
+    "Line {line}. I think it is missing its semicolon.",
+    "It looks like line {line} simply trails off. No semicolon. No closure.",
+  ],
+  "hunch.goth.semicolon.mild.fix": [
+    "I think line {line} lacks a semicolon. Add one at the end. A small, final mark.",
+    "Line {line} might need a ; at its end. Grant it that much closure.",
+  ],
+  "hunch.goth.semicolon.spicy.vague": [
+    "I suspect a missing semicolon. The smallest void in your code. Yet it consumes everything.",
+    "Looks like a statement that refuses to end. Bold of it. Everything ends.",
+  ],
+  "hunch.goth.semicolon.spicy.line": [
+    "Line {line}. I suspect it has no semicolon. It drifts into the next line like fog.",
+    "It looks like line {line} forgot its semicolon. To forget and be forgotten. I relate.",
+  ],
+  "hunch.goth.semicolon.spicy.fix": [
+    "I suspect line {line} wants a semicolon. Add it at the end. One tiny tombstone for the statement.",
+    "Line {line} looks unfinished. Put a ; at the end. All things must stop. Help this one.",
+  ],
+
+  "hunch.goth.assign.mild.vague": [
+    "I think a condition assigns where it meant to compare. A single =, where two were needed.",
+    "It looks like a lone = in a condition. It asks nothing. It only takes.",
+  ],
+  "hunch.goth.assign.mild.line": [
+    "Line {line}. I think the = there was meant to be ==.",
+    "It looks like the condition on line {line} assigns instead of asking. A question never asked.",
+  ],
+  "hunch.goth.assign.mild.fix": [
+    "I think line {line} uses = where == belongs. Add the second one. Let it ask, not take.",
+    "The condition on line {line} might be assigning. Change = to ==. Some things should only be compared.",
+  ],
+  "hunch.goth.assign.spicy.vague": [
+    "I suspect a condition with one = in it. It does not seek the truth. It overwrites it.",
+    "Looks like an if that assigns. It answers its own question. How lonely. How convenient.",
+  ],
+  "hunch.goth.assign.spicy.line": [
+    "Line {line}. I suspect that = wanted a twin. Alone, it destroys what it was meant to examine.",
+    "It looks like line {line} assigns inside its condition. Truth is whatever it says now. Bleak.",
+  ],
+  "hunch.goth.assign.spicy.fix": [
+    "I suspect line {line} should say ==, not =. Give it the second mark. Stop it rewriting reality.",
+    "Line {line} looks like assignment in a condition. Use ==. To compare is to accept what already is.",
+  ],
+
+  "hunch.goth.indent.mild.vague": [
+    "I think tabs and spaces are mixed in the indentation. Different kinds of emptiness.",
+    "It looks like the whitespace is not all one kind. Even nothing has factions.",
+  ],
+  "hunch.goth.indent.mild.line": [
+    "Line {line}. I think its indentation mixes tabs and spaces.",
+    "It looks like the emptiness before line {line} differs from the rest. Subtly. Fatally.",
+  ],
+  "hunch.goth.indent.mild.fix": [
+    "I think line {line} mixes tabs and spaces. Re-indent it with spaces alone. One kind of nothing.",
+    "The indent on line {line} might not match. Choose tabs or spaces and keep to it, even in the dark.",
+  ],
+  "hunch.goth.indent.spicy.vague": [
+    "I suspect mixed tabs and spaces. Two voids, at war. And you cannot see either.",
+    "Looks like the indentation disagrees with itself. Invisible conflict. My favourite kind.",
+  ],
+  "hunch.goth.indent.spicy.line": [
+    "Line {line}. I suspect the nothing there is the wrong nothing.",
+    "It looks like line {line} hides a tab among spaces. Or a space among tabs. Betrayal, either way.",
+  ],
+  "hunch.goth.indent.spicy.fix": [
+    "I suspect line {line} mixes tabs and spaces. Replace its indent with spaces. Let the void be uniform.",
+    "Line {line} looks wrongly indented. Match it to the lines around it. Even emptiness has rules.",
+  ],
+
+  "hunch.goth.parse.mild.vague": [
+    "I think it does not parse. I cannot say where. The engine turned away and said nothing.",
+    "It looks like something is wrong with the syntax. Where, I do not know. I rarely do.",
+  ],
+  "hunch.goth.parse.spicy.vague": [
+    "I suspect the engine rejected this. It gave no reason. Rejection seldom does.",
+    "Looks like it will not parse. I cannot find the wound. Only that it bleeds.",
+  ],
+
+  "state.goth.empty": [
+    "Nothing. You have pasted the void. I know it well. Paste some code instead.",
+    "Empty. Like the bath, after. Paste something and I will look.",
+  ],
+  "state.goth.toolong": [
+    "More than 20,000 characters. Too much to bear. I did not check it. Bring me a smaller piece.",
+    "Too long. I left it unread, like most things. Paste a part of it, under 20,000 characters.",
+  ],
+  "state.goth.clean": [
+    "I found no syntax errors. I only check syntax. Whether it is right, only time and tests will tell.",
+    "The syntax seems sound. I cannot say if the logic is. I see only the surface. The depths are yours.",
+  ],
+  "state.goth.unsure": [
+    "Something feels wrong. A missing semicolon, perhaps. I cannot find it. It haunts the file.",
+    "A shadow of an error. Maybe a semicolon. I cannot pin it down. Look again at where your lines end.",
+  ],
+
+  "chatter.goth.mild.code": [
+    "Every program ends. Some with a return. Most with an exception.",
+    "I listen. It is all a rubber duck can do. It is enough.",
+    "The cursor blinks. It waits. So do I.",
+    "Dark mode is not a theme. It is the truth.",
+    "Deprecated. A gentle word for forgotten.",
+    "The logs remember everything. Nobody reads the logs.",
+  ],
+  "chatter.goth.spicy.code": [
+    "Your code will outlive your interest in it.",
+    "Garbage collection comes for every object. It is the only fair system.",
+    "It works on your machine. Your machine will not last.",
+    "Another framework is born. Another is forgotten. The wheel turns.",
+    "undefined is not a function. undefined is a way of life.",
+    "They say the bug is fixed. A bug is never fixed. It only moves.",
+    "Technical debt is the only kind that mourns with you.",
+  ],
+  "chatter.goth.mild.general": [
+    "The bath water cools. It always does.",
+    "I float because sinking takes effort.",
+    "The pond is dark at night. I prefer it.",
+    "Bread dissolves. So does everything, given water and time.",
+    "I was made yellow. Inside, I am a much darker yellow.",
+    "Squeak. A hollow sound. From a hollow duck.",
+    "They named me {name}. Names are for things that last.",
+  ],
+  "chatter.goth.spicy.general": [
+    "The drain takes everything in the end. I have watched it happen.",
+    "Real ducks fly south. I stay. I have nowhere to be.",
+    "They squeeze me and I cry out. They call it cute.",
+    "Bubbles. Brief, shining, gone. I do not get attached.",
+    "The moon in the pond is not the moon. Nothing in the pond is what it seems.",
+    "I am rubber. I feel nothing. That was a joke. I think.",
+  ],
+
+  "buddy.goth": [
+    "The night is long. I will sit through it with you.",
+    "You came back. Few do. I am glad, in my way.",
+    "You need not say anything. Silence is fine company. So, I hope, am I.",
+    "Even the darkest pond has a duck on it. Tonight that duck is yours.",
+    "I do not smile. It is how I am moulded. But I am pleased you are here.",
+    "Rest. The world will still be strange tomorrow. We will face it then.",
+  ],
+};

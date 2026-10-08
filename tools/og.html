@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Link preview image</title>
+  <style>body { margin: 0; } canvas { display: block; }</style>
+</head>
+<body>
+  <canvas id="og" width="1200" height="627"></canvas>
+  <script type="module">
+    import { PRESETS } from '../data/presets.js';
+    import { pixelsOf, drawPixels } from '../js/sprite-render.js';
+
+    const canvas = document.getElementById('og');
+    const ctx = canvas.getContext('2d');
+    const font = 'ui-monospace, Consolas, Menlo, monospace';
+
+    ctx.fillStyle = '#9fd3e6';
+    ctx.fillRect(0, 0, 1200, 627);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(40, 40, 1120, 547);
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(43, 43, 1114, 541);
+
+    ctx.fillStyle = '#111111';
+    ctx.textAlign = 'center';
+    ctx.font = `bold 84px ${font}`;
+    ctx.fillText('Build-a-Duck', 600, 170);
+    ctx.font = `30px ${font}`;
+    ctx.fillText('Make a pixel rubber duck. Let it squeak at your code.', 600, 230);
+
+    const scale = 7;
+    const side = 32 * scale;
+    const gap = 36;
+    const left = (1200 - (side * 4 + gap * 3)) / 2;
+    PRESETS.forEach((preset, index) => {
+      const x = left + index * (side + gap);
+      ctx.fillStyle = '#9fd3e6';
+      ctx.fillRect(x, 290, side, side);
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(x, 290, side, side);
+      drawPixels(ctx, pixelsOf(preset.frames[0]), preset.palette, { x, y: 290, scale });
+    });
+    document.body.dataset.ready = 'true';
+  </script>
+</body>
+</html>
