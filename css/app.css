@@ -48,6 +48,13 @@ button { cursor: pointer; }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
 button[aria-pressed="true"] { background: var(--pressed); color: var(--pressed-ink); }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+/* These sit on fixed light colours in both themes, so their ring is fixed too. */
+.stage :focus-visible, .section-toggle:focus-visible, .preset:focus-visible, .frame:focus-visible { outline-color: #0b3d91; }
+/* The duck can be over anything: a dark ring with a white one inside it. */
+.duck:focus-visible { outline: 3px solid #0b3d91; outline-offset: 2px; box-shadow: 0 0 0 2px #ffffff; }
+
+.skip { position: absolute; left: var(--space-4); top: -100px; z-index: 40; }
+.skip:focus { top: var(--space-2); }
 
 .row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: var(--space-2) 0; }
 
@@ -120,7 +127,7 @@ button[aria-pressed="true"] { background: var(--pressed); color: var(--pressed-i
 
 .frame-strip { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .frame { display: grid; justify-items: center; padding: var(--space-1); background: var(--water); color: var(--water-ink); min-height: 0; }
-.frame[aria-pressed="true"] { background: var(--water); color: var(--water-ink); outline: 3px solid var(--focus); outline-offset: 2px; }
+.frame[aria-pressed="true"] { background: var(--water); color: var(--water-ink); box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px var(--ink); }
 
 .animations { display: grid; gap: var(--space-3); }
 .animation { display: grid; grid-template-columns: auto 72px minmax(0, 1fr); gap: var(--space-3); align-items: start; border-top: 2px solid var(--line); padding-top: var(--space-3); }

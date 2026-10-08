@@ -32,6 +32,7 @@ async function start() {
     fallback,
   });
   let mode = first.mode;
+  if (mode === 'own' && payload !== null) clearFragment(); // a link that could not be opened
   const store = createStore(first.duck);
 
   // ── Notices that carry actions ───────────────────────────────────────────
@@ -85,6 +86,9 @@ async function start() {
     saveTimer = setTimeout(flush, AUTOSAVE_MS);
   });
   window.addEventListener('pagehide', flush);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flush();
+  });
 
   window.addEventListener('hashchange', async () => {
     const next = payloadOf(location.hash);
@@ -161,19 +165,28 @@ async function start() {
 
   // ── Maker or view-only ───────────────────────────────────────────────────
 
+  let viewerScale = null;
   function applyMode() {
     const only = viewOnly.matches;
     document.getElementById('maker').hidden = only;
     document.getElementById('viewer').hidden = !only;
     document.getElementById('stage').hidden = only;
     document.body.classList.toggle('view-only', only);
-    if (only) stage.setHost(viewer.screen, viewer.layout(), true);
-    else stage.setHost(document.getElementById('duck-layer'), 3, false);
+    if (only) {
+      viewerScale = viewer.layout();
+      stage.setHost(viewer.screen, viewerScale, true);
+    } else {
+      viewerScale = null;
+      stage.setHost(document.getElementById('duck-layer'), 3, false);
+    }
   }
   viewOnly.addEventListener('change', applyMode);
+  // A phone's address bar resizes the window constantly; only a change of
+  // laptop scale needs the duck to be re-seated.
   window.addEventListener('resize', () => {
-    if (viewOnly.matches) applyMode();
+    if (viewOnly.matches && viewer.layout() !== viewerScale) applyMode();
   });
+  document.getElementById('skip-to-duck').addEventListener('click', () => document.getElementById('duck').focus());
 
   document.getElementById('boot-fallback').remove();
   applyMode();

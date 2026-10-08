@@ -296,6 +296,8 @@ fallback is used. It is not needed for the current art.
 
 ### 7.1 Maker (640 px and above)
 
+- **Skip control**: the first tab stop is a button "Skip to the duck", visible only while
+  focused, which moves focus to the duck.
 - **Header**: the title "Build-a-Duck" and the line "Make a pixel rubber duck, give it a
   personality, and let it squeak at your code."
 - **Main**, at 1024 px and above in two columns: Editor on the left; Personality above Export
@@ -412,9 +414,9 @@ left and right along the stage.
   idle. With `roam` `strip` the destination is a random x within its range on the stage. With
   `roam` `page` the duck is in a fixed layer above the page and the destination is a random
   point in the viewport; it moves in a straight line and faces the horizontal direction of
-  travel. A page destination is only accepted if the duck's rectangle there covers no button,
-  link, input, select, textarea or canvas other than itself (checked with
-  `document.elementsFromPoint` at its four corners and centre); after 10 rejected tries it
+  travel. A page destination is only accepted if the duck's rectangle there overlaps the
+  bounding rectangle of no visible button, link, input, select, textarea, canvas or label
+  other than itself; after 10 rejected tries it
   goes to a strip destination instead. The duck can therefore pass over controls while
   walking but never rests on one. It stays clickable wherever it is.
 - With reduced motion or Pause motion on, or in view-only mode, `roam` `page` behaves as
@@ -524,9 +526,14 @@ Preprocessor lines are also skipped by R2a.
 In C/C++, a *preprocessor line* is one whose first non-space character is `#`, together with
 any following lines joined to it by a trailing backslash.
 
-Known limitation, accepted: JavaScript regular-expression literals are not recognised by the
-scanner. This only matters when R6 cannot run (see R6), where a regex containing a bracket or
-quote can produce a false hunch.
+JavaScript regular-expression literals are blanked like strings. A `/` starts one when the
+last thing before it cannot end an expression (one of `( , = : [ ! & | ? { } ; + - * % < > ~ ^`,
+one of the words `return typeof case do else in of void delete throw new yield await
+instanceof`, or the start of the text) and a closing `/` follows on the same line.
+
+Known limitations, accepted: `while (int n = read())` in C++ gets an `assign` hunch; a macro
+used as a statement without a semicolon, such as `EXPORT_SYMBOL(foo)`, gets a `semicolon`
+hunch; JavaScript import attributes (`with { type: "json" }`) get a `parse` hunch.
 
 ### 11.5 Rules
 
@@ -588,7 +595,9 @@ Reports every confident line.
 - Java, C/C++, JavaScript: for each `if` or `while` keyword followed by `(`, the condition is
   the text up to the matching `)`. A bare `=` directly inside that pair of parentheses, not
   inside any nested `()`, `[]` or `{}`, is flagged. (So `while ((c = getchar()) != EOF)` is not
-  flagged.)
+  flagged.) A `;` directly inside the parentheses discards what came before it, so the C++17
+  form `if (auto it = m.find(k); it != m.end())` is not flagged. A `{` directly inside them
+  means the parenthesis never closed, and nothing after it is flagged.
 - Python: for each line whose first word is `if`, `elif` or `while`, the condition is the text
   from after that word to the first `:` that is outside all `()`, `[]`, `{}`. A bare `=`
   outside all brackets in the condition is flagged. (So `if foo(key=1):` is not flagged.)
@@ -612,6 +621,8 @@ the original text:
 - `export` starting a line and followed by `{` or `*` is replaced with spaces through the end
   of that statement (its `;`, or the end of the line holding the closing `}` or specifier);
 - any other `export` starting a line is replaced with spaces.
+
+A first line starting with `#!` is also replaced with spaces.
 
 R6 is *unavailable* when the text contains `import.meta` outside strings and comments, or when
 constructing the function throws anything other than a `SyntaxError`.
@@ -977,3 +988,24 @@ Each of these differs from revision 3 as approved.
 - **Autosave.** A pending save is also written when the page is hidden or closed.
 - **Preset names.** A new duck starts with its preset's name (for example "Classic") in the
   name field.
+- **Regex literals, C++17 initialisers and hashbang lines** are handled as now described in
+  sections 11.4 and 11.5. These were false hunches found by the build audit.
+- **Roaming.** The rest check compares whole rectangles, and counts labels as controls. The
+  five-point check in revision 3 let the duck stop on small controls.
+- **Focus rings.** Controls on the stage, section headings, presets and frames use a fixed
+  dark ring (`#0b3d91`) in both themes, because they sit on fixed light colours. The duck has
+  a dark ring with a white ring inside it, because it can be over anything.
+- **Skip control** added (section 7.1), because the duck was the last of about 100 tab stops.
+- **Damaged link.** A link that cannot be opened is removed from the address at startup, so
+  its notice does not return on every reload.
+- **Late answer.** If the paste dialog is reopened while the duck is thinking, the answer
+  waits until the dialog closes.
+- **View-only.** The paste dialog closes if the page drops into view-only mode, and a resize
+  that does not change the laptop's scale leaves an open speech box alone.
+- **Names.** A `$` in a duck's name is spoken as written.
+- **Module boundaries.** `js/panels.js` hides the stage's Paste code control in buddy mode and
+  imports `isEdited` from `js/editor.js`; `js/main.js` applies stored preferences to the page;
+  `chooseStartupDuck` takes the fallback duck as an argument.
+- **Colours outside the tokens.** The stage, speech box, share card, laptop and grid
+  checkerboard use fixed colours written where they are used, because the spec fixes them in
+  both themes.

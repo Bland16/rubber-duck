@@ -40,7 +40,8 @@ export function createPicker(pool, rng = Math.random) {
 }
 
 export function fill(template, duck, line) {
-  return template.replaceAll('{name}', duck.name || 'Duck').replaceAll('{line}', String(line));
+  // Function replacers, so a `$` in a name is not read as a replacement pattern.
+  return template.replaceAll('{name}', () => duck.name || 'Duck').replaceAll('{line}', () => String(line));
 }
 
 export function voiceOf(duck) {

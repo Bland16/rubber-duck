@@ -9,7 +9,7 @@ import { squeak } from './audio.js';
 
 export const PROMPT = "You look like you're stuck, paste your code for a check";
 const LANGUAGE_LABELS = { java: 'Java', javascript: 'JavaScript', python: 'Python', c: 'C/C++' };
-const CONTROL_SELECTOR = 'button, a, input, select, textarea, canvas';
+const CONTROL_SELECTOR = 'button, a, input, select, textarea, canvas, label';
 const THINKING_MS = 800;
 
 export function createStage({ store, picker, prefs, reducedMotion }) {
@@ -73,9 +73,12 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
   // A page destination is fine when the duck would not rest on a control.
   function restsOnControl(x, y) {
     const s = side();
-    const points = [[x + 4, y + 4], [x + s - 4, y + 4], [x + 4, y + s - 4], [x + s - 4, y + s - 4], [x + s / 2, y + s / 2]];
-    return points.some(([px, py]) => document.elementsFromPoint(px, py)
-      .some((node) => !duckButton.contains(node) && node.matches(CONTROL_SELECTOR)));
+    return [...document.querySelectorAll(CONTROL_SELECTOR)].some((node) => {
+      if (duckButton.contains(node)) return false;
+      const r = node.getBoundingClientRect();
+      if (!r.width || !r.height) return false; // hidden
+      return r.left < x + s && r.right > x && r.top < y + s && r.bottom > y;
+    });
   }
 
   function chooseTarget() {
@@ -304,10 +307,16 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
     if (pasteDialog.returnValue !== 'ask') return;
     const result = checkCode(text, language);
     enter('thinking');
-    setTimeout(() => {
+    // If the dialog was reopened in the meantime, the answer waits for it.
+    const answer = () => {
+      if (dialogOpen()) {
+        setTimeout(answer, 200);
+        return;
+      }
       enter('idle');
       say(composeHunches(result, duck(), picker));
-    }, THINKING_MS);
+    };
+    setTimeout(answer, THINKING_MS);
   });
 
   // ── Input ────────────────────────────────────────────────────────────────
@@ -364,6 +373,7 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
       scale = nextScale;
       viewer = isViewer;
       if (duckButton.parentElement !== element) element.append(duckButton);
+      if (isViewer && pasteDialog.open) pasteDialog.close('cancel');
       closeSpeech();
       enter('idle');
       position.x = Math.min(position.x, bounds().maxX);

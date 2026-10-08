@@ -39,6 +39,8 @@ export function prepare(text, scanned) {
     for (let i = from; i < to && i < chars.length; i += 1) if (chars[i] !== '\n') chars[i] = ' ';
   };
 
+  if (text.startsWith('#!')) erase(0, text.indexOf('\n') === -1 ? chars.length : text.indexOf('\n'));
+
   let offset = 0;
   blanked.split('\n').forEach((line, index) => {
     const start = offset;

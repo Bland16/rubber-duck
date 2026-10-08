@@ -168,6 +168,5 @@ export function createExportPanel({ store, presets }) {
     if (isEdited(store.get(), presets)
       && !(await confirmAction('Load this duck file? It replaces your whole duck, including its name, personality and languages.', 'Load'))) return;
     store.replace(result.duck);
-    showNotice(`Loaded ${result.duck.name || 'Duck'}.`);
   });
 }

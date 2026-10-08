@@ -7,7 +7,7 @@ const IDENT = /[A-Za-z0-9_$]/;
 export const LANGUAGES = {
   java: { lineComment: '//', block: true, triple: ['"""'] },
   c: { lineComment: '//', block: true, raw: true, preprocessor: true, digitSeparator: true },
-  javascript: { lineComment: '//', block: true, template: true },
+  javascript: { lineComment: '//', block: true, template: true, regex: true },
   python: { lineComment: '#', triple: ['"""', "'''"] },
 };
 
@@ -163,6 +163,17 @@ export function scan(text, config) {
       continue;
     }
 
+    if (config.regex && ch === '/') {
+      const end = regexEnd(text, i, out);
+      if (end !== -1) {
+        while (i < end) {
+          blank(text[i]);
+          i += 1;
+        }
+        continue;
+      }
+    }
+
     const triple = config.triple && config.triple.find((t) => text.startsWith(t, i));
     if (triple) {
       consumeString(triple, triple, true, true);
@@ -223,6 +234,39 @@ export function scan(text, config) {
   return { blanked: out.join(''), findings, startsInString, preprocessor, unclosed };
 }
 
+const REGEX_AFTER_WORDS = new Set(['return', 'typeof', 'case', 'do', 'else', 'in', 'of', 'void',
+  'delete', 'throw', 'new', 'yield', 'await', 'instanceof']);
+
+// If the `/` at index i starts a regular-expression literal, returns the index
+// just past it (flags included); otherwise -1. A `/` is a regex when what comes
+// before it cannot end an expression.
+function regexEnd(text, i, out) {
+  let k = out.length - 1;
+  while (k >= 0 && (out[k] === ' ' || out[k] === '\t' || out[k] === '\n' || out[k] === '\r')) k -= 1;
+  if (k >= 0) {
+    const prev = out[k];
+    if (IDENT.test(prev)) {
+      let w = k;
+      while (w >= 0 && IDENT.test(out[w])) w -= 1;
+      if (!REGEX_AFTER_WORDS.has(out.slice(w + 1, k + 1).join(''))) return -1;
+    } else if (!'(,=:[!&|?{};+-*%<>~^'.includes(prev)) return -1;
+  }
+  let inClass = false;
+  for (let j = i + 1; j < text.length; j += 1) {
+    const ch = text[j];
+    if (ch === '\n') return -1;
+    if (ch === '\\') j += 1;
+    else if (ch === '[') inClass = true;
+    else if (ch === ']') inClass = false;
+    else if (ch === '/' && !inClass) {
+      let end = j + 1;
+      while (end < text.length && /[a-z]/.test(text[end])) end += 1;
+      return end;
+    }
+  }
+  return -1;
+}
+
 function lastWord(out) {
   let k = out.length - 1;
   while (k >= 0 && /[A-Za-z0-9_']/.test(out[k])) k -= 1;
@@ -257,31 +301,40 @@ export function isBareEquals(text, i) {
 }
 
 // R4 for brace languages: a bare `=` directly inside the parentheses of an
-// `if` or `while`, not nested any deeper.
+// `if` or `while`, not nested any deeper. One pass over the text.
 export function checkConditionAssign(blanked) {
   const lines = new Set();
+  const stack = []; // open brackets; condition parentheses carry the lines they would flag
   const keyword = /\b(?:if|while)\s*\(/g;
+  const conditionStarts = new Set();
   let match;
-  while ((match = keyword.exec(blanked))) {
-    let depth = 0;
-    let line = 1 + count(blanked, '\n', 0, match.index);
-    for (let i = match.index; i < blanked.length; i += 1) {
-      const ch = blanked[i];
-      if (ch === '\n') line += 1;
-      else if (OPEN[ch]) depth += 1;
-      else if (CLOSE[ch]) {
-        depth -= 1;
-        if (depth <= 0) break;
-      } else if (depth === 1 && isBareEquals(blanked, i)) lines.add(line);
+  while ((match = keyword.exec(blanked))) conditionStarts.add(match.index + match[0].length - 1);
+
+  let line = 1;
+  for (let i = 0; i < blanked.length; i += 1) {
+    const ch = blanked[i];
+    const top = stack[stack.length - 1];
+    if (ch === '\n') line += 1;
+    else if (OPEN[ch]) {
+      // A brace directly inside a condition means its parenthesis never closed.
+      if (ch === '{' && top && top.flagged) top.dead = true;
+      stack.push(conditionStarts.has(i) ? { ch, flagged: [], dead: false } : { ch });
+    } else if (CLOSE[ch]) {
+      let k = stack.length - 1;
+      while (k >= 0 && stack[k].ch !== CLOSE[ch]) k -= 1;
+      if (k >= 0) {
+        for (const entry of stack.splice(k)) {
+          if (entry.flagged && !entry.dead) entry.flagged.forEach((n) => lines.add(n));
+        }
+      }
+    } else if (top && top.flagged && !top.dead) {
+      // `if (init; condition)` in C++17: the part before the `;` is a declaration.
+      if (ch === ';') top.flagged.length = 0;
+      else if (isBareEquals(blanked, i)) top.flagged.push(line);
     }
   }
-  return [...lines].sort((a, b) => a - b).map((line) => ({ rule: 'R4', kind: 'assign', line }));
-}
-
-function count(text, ch, from, to) {
-  let n = 0;
-  for (let i = from; i < to; i += 1) if (text[i] === ch) n += 1;
-  return n;
+  for (const entry of stack) if (entry.flagged && !entry.dead) entry.flagged.forEach((n) => lines.add(n));
+  return [...lines].sort((x, y) => x - y).map((n) => ({ rule: 'R4', kind: 'assign', line: n }));
 }
 
 const BLOCK_WORDS = new Set(['if', 'else', 'for', 'while', 'do', 'switch', 'try', 'catch',
