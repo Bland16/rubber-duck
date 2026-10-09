@@ -41,20 +41,37 @@ export function restore({ duck, backup }) {
   return { duck: backup, backup: duck };
 }
 
-// Ducks saved before the presets had a real walk cycle (frames 8 to 11) walk on
-// the standing pose and one stride, or on that stride and a made-up second one.
-// Give those the new frames and sequence.
-export function upgradeWalk(duck, presets) {
+// Brings a duck saved by an earlier version of the presets up to date. Only a
+// duck still built on preset frames is touched.
+//  - Before the walk cycle (frames 8 to 11) existed, ducks walked on the standing
+//    pose and one stride, or on that stride and a made-up second one.
+//  - Before the carried and landing poses (frames 12 and 13) existed, those two
+//    animations were filled in as copies of idle.
+export function upgradeDuck(duck, presets) {
   if (!duck) return duck;
-  const walk = duck.animations.walk;
-  const first = duck.frames.length === 8 && walk.seq.join() === '0,1';
-  const second = duck.frames.length === 9 && walk.seq.join() === '1,8';
-  if (!first && !second) return duck;
-  const preset = presets.find((p) => p.frames[1] === duck.frames[1]);
-  if (!preset) return duck;
-  return {
-    ...duck,
-    frames: [...duck.frames.slice(0, 8), ...preset.frames.slice(8)],
-    animations: { ...duck.animations, walk: { ...preset.animations.walk } },
-  };
+  const preset = presets[0]; // every preset has the same frames and animations
+  if (duck.frames[1] !== preset.frames[1]) return duck;
+  let next = duck;
+
+  const walk = next.animations.walk.seq.join();
+  if ((next.frames.length === 8 && walk === '0,1') || (next.frames.length === 9 && walk === '1,8')) {
+    next = {
+      ...next,
+      frames: [...next.frames.slice(0, 8), ...preset.frames.slice(8, 12)],
+      animations: { ...next.animations, walk: { ...preset.animations.walk } },
+    };
+  }
+
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const old = preset.palette.length - 2; // the splash added two colours at the end
+  if (next.frames.length === 12 && next.frames[8] === preset.frames[8] && next.palette.length === old
+    && same(next.animations.carried, next.animations.idle) && same(next.animations.landing, next.animations.idle)) {
+    next = {
+      ...next,
+      palette: [...next.palette, ...preset.palette.slice(old)],
+      frames: [...next.frames, ...preset.frames.slice(12)],
+      animations: { ...next.animations, carried: { ...preset.animations.carried }, landing: { ...preset.animations.landing } },
+    };
+  }
+  return next;
 }

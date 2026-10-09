@@ -11,6 +11,8 @@ export const PROMPT = "You look like you're stuck, paste your code for a check";
 const LANGUAGE_LABELS = { java: 'Java', javascript: 'JavaScript', python: 'Python', c: 'C/C++' };
 const CONTROL_SELECTOR = 'button, a, input, select, textarea, canvas, label';
 const THINKING_MS = 800;
+const FALL_SPEED = 900; // px per second
+const LANDING_MS = 700;
 
 export function createStage({ store, picker, prefs, reducedMotion }) {
   const layer = document.getElementById('duck-layer');
@@ -94,7 +96,7 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
     const m = mode();
     if (motionOff() && m === 'sit' && !dragging) position = { ...sitPlace() };
     // Off the strip: any mode but 'strip', a duck being dragged, or one walking home.
-    const free = dragging || (motionOff() ? m === 'sit' : m !== 'strip' || state === 'walking');
+    const free = dragging || state === 'falling' || (motionOff() ? m === 'sit' : m !== 'strip' || state === 'walking');
     position.x = Math.min(Math.max(0, position.x), free ? b.width - side() : b.maxX);
     position.y = free ? Math.min(Math.max(0, position.y), b.height - side()) : b.groundY;
     place();
@@ -180,6 +182,8 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
   }
 
   function animationName() {
+    if (dragging || state === 'falling') return 'carried';
+    if (state === 'landing') return 'landing';
     if (state === 'walking') return 'walk';
     if (state === 'sleeping') return 'sleep';
     if (state === 'squeaking') return 'squeak';
@@ -234,6 +238,19 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
           position.y += (dy / distance) * travel;
         }
         place();
+      }
+    } else if (state === 'falling') {
+      // Dropped above the bottom strip: straight down, fast.
+      const dt = Math.min(100, now - (tick.last || now)) / 1000;
+      const ground = bounds().groundY;
+      position.y = still ? ground : Math.min(ground, position.y + FALL_SPEED * dt);
+      place();
+      if (position.y >= ground) enter('landing', now);
+    } else if (state === 'landing') {
+      const length = (animation.seq.length * 1000) / animation.fps;
+      if (now - stateSince >= Math.max(LANDING_MS, length)) {
+        clampToHost();
+        enterIdle(now);
       }
     } else if (state === 'squeaking') {
       const length = (animation.seq.length * 1000) / animation.fps;
@@ -437,12 +454,13 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
         }
       });
     }
-    if (m === 'strip' && !motionOff() && state === 'idle') {
-      const b = bounds();
-      walkTo({ x: Math.min(position.x, b.maxX), y: b.groundY }); // back down to the bottom
+    if (state !== 'idle') {
+      clampToHost(); // busy talking or thinking: no landing
+    } else if (m === 'strip') {
+      position.x = Math.min(position.x, bounds().maxX);
+      enter('falling'); // down to the bottom, then a splash
     } else {
-      if (state === 'idle') stateSince = performance.now();
-      clampToHost();
+      enter('landing');
     }
   }
   duckButton.addEventListener('pointerup', drop);

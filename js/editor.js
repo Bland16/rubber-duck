@@ -7,7 +7,7 @@ import {
 import { pixelsOf, drawThumb, drawSprite, frameAt } from './sprite-render.js';
 import { confirmAction } from './notice.js';
 
-const ANIMATION_LABELS = { idle: 'Idle', walk: 'Walk', squeak: 'Squeak', sleep: 'Sleep', thinking: 'Thinking' };
+const ANIMATION_LABELS = { idle: 'Idle', walk: 'Walk', squeak: 'Squeak', sleep: 'Sleep', thinking: 'Thinking', carried: 'Carried', landing: 'Landing' };
 const artKey = (duck) => JSON.stringify([duck.frames, duck.palette, duck.animations]);
 
 // True when the art differs from every preset.

@@ -17,11 +17,13 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 SOURCE = os.path.join(HERE, "source", "ducks.png")
-# A second, smaller sheet (32 poses). Only its four-frame walk cycle is used.
+# A second, smaller sheet (32 poses). Its walk cycle and two reaction poses are used.
 SOURCE_2 = os.path.join(HERE, "source", "ducks2.png")
 SOURCE_2_POSES = 32
 SOURCE_2_PITCH = (2.8, 3.8)
-SOURCE_2_WALK = [16, 17, 18, 19]   # reading order: the first four poses of the third row
+# (pose in reading order, name, may add palette colours)
+SOURCE_2_USED = [(16, "walk 1", False), (17, "walk 2", False), (18, "walk 3", False),
+                 (19, "walk 4", False), (21, "carried", False), (29, "landing", True)]
 OUT_JS = os.path.join(ROOT, "data", "presets.js")
 OUT_DIR = os.path.join(HERE, "out")
 OUT_SHEET = os.path.join(OUT_DIR, "contact_sheet.png")
@@ -53,6 +55,8 @@ ANIMATIONS = {
     "squeak": {"seq": [2, 0], "fps": 6, "motion": "hop"},
     "sleep": {"seq": [3], "fps": 1, "motion": "bob"},
     "thinking": {"seq": [5], "fps": 4, "motion": "shake"},
+    "carried": {"seq": [12], "fps": 4, "motion": "shake"},
+    "landing": {"seq": [13], "fps": 4, "motion": "none"},
 }
 
 
@@ -227,6 +231,11 @@ def is_brown(c):
     return 20 <= h * 360 <= 55 and v < 0.6
 
 
+def is_water(c):
+    h, sat, _ = colorsys.rgb_to_hsv(c[0] / 255, c[1] / 255, c[2] / 255)
+    return 180 <= h * 360 <= 260 and sat >= 0.25
+
+
 def hex_of(c):
     return "#%02x%02x%02x" % tuple(c)
 
@@ -376,8 +385,17 @@ def main():
             fail(f"{name} leaves no motion margin: {box}")
         frames.append(canvas)
 
-    # The walk cycle from the second sheet. It uses the palette and the anchor
-    # already fixed above, so frames 0 to 7 do not change when it is added.
+    # Poses from the second sheet. They use the palette and the anchor already
+    # fixed above, so frames 0 to 7 do not change when they are added. A pose may
+    # add colours (the splash is blue); those go after the existing slots.
+    def slot_2(colour, may_add):
+        d = [np.linalg.norm(np.array(colour) - np.array(c)) for c in centres]
+        if may_add and is_water(colour) and min(d) > MERGE_DISTANCE:
+            centres.append(colour)
+            print(f"  [PALETTE] slot {len(centres)}: {hex_of(colour)} added for the second sheet")
+            return len(centres)
+        return int(np.argmin(d)) + 1
+
     global PITCH_RANGE
     brown_slots = [i + 1 for i, c in enumerate(centres) if is_brown(c) and i + 1 not in body_slots]
     shade_slot = min(body_slots, key=lambda k: luma(centres[k - 1]))
@@ -388,13 +406,13 @@ def main():
         fail(f"second sheet: expected {SOURCE_2_POSES} poses, found {len(boxes2)}")
     boxes2 = reading_order(boxes2)
     first_pitch, PITCH_RANGE = PITCH_RANGE, SOURCE_2_PITCH
-    for n, i in enumerate(SOURCE_2_WALK):
+    for i, label, may_add in SOURCE_2_USED:
         x0, y0, x1, y1 = boxes2[i]
         pad = 4
         ya, yb = max(0, y0 - pad), min(rgb2.shape[0], y1 + pad)
         xa, xb = max(0, x0 - pad), min(rgb2.shape[1], x1 + pad)
         cells, pitch = sample_cells(rgb2[ya:yb, xa:xb], mask2[ya:yb, xa:xb])
-        pose = [[0 if c is None else slot(c) for c in row] for row in trim(cells)]
+        pose = [[0 if c is None else slot_2(c, may_add) for c in row] for row in trim(cells)]
         belly, feet, centre = anchor_info(pose, body_slots, min_cells=6)
         # This sheet draws the wing lines in brown, which shows on a recoloured
         # duck. Above the belly, brown that is not next to the beak becomes shade.
@@ -405,6 +423,11 @@ def main():
             for dx in (-1, 0, 1):
                 near_beak |= np.roll(np.roll(beak, dy, axis=0), dx, axis=1)
         wing = np.isin(arr, brown_slots) & ~near_beak
+        if not label.startswith("walk"):
+            # No legs here: brown under the belly is the bottom outline.
+            under = wing.copy()
+            under[:belly + 1] = False
+            arr[under] = max(range(len(centres)), key=lambda k: -luma(centres[k])) + 1
         wing[belly + 1:] = False
         arr[wing] = shade_slot
         pose = arr.tolist()
@@ -412,11 +435,11 @@ def main():
         lift = max(0, feet - (SIZE - 1 - belly_row))
         canvas, box = place(pose, belly, centre, belly_row - lift, centre_col)
         if canvas is None:
-            fail(f"walk {n + 1} does not fit the {SIZE}x{SIZE} canvas: {box} (feet {feet})")
-        print(f"  [PLACE] walk {n + 1}: pitch {pitch[0]:.2f} x {pitch[1]:.2f}, "
+            fail(f"{label} does not fit the {SIZE}x{SIZE} canvas: {box} (feet {feet})")
+        print(f"  [PLACE] {label}: pitch {pitch[0]:.2f} x {pitch[1]:.2f}, "
               f"columns {box[0]}-{box[2] - 1}, rows {box[1]}-{box[3] - 1}")
         if box[0] < 1 or box[2] - 1 > 30 or box[1] < 2:
-            fail(f"walk {n + 1} leaves no motion margin: {box}")
+            fail(f"{label} leaves no motion margin: {box}")
         frames.append(canvas)
     PITCH_RANGE = first_pitch
 

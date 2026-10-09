@@ -7,7 +7,10 @@ export const MAX_FRAMES = 16;
 export const MAX_COLOURS = 15;
 export const MAX_NAME = 24;
 export const MAX_SEQ = 8;
-export const ANIMATION_NAMES = ['idle', 'walk', 'squeak', 'sleep', 'thinking'];
+export const ANIMATION_NAMES = ['idle', 'walk', 'squeak', 'sleep', 'thinking', 'carried', 'landing'];
+// The first five are required. The rest were added later: a duck without them
+// gets a copy of its idle animation, and a link without them is still read.
+export const CORE_ANIMATIONS = 5;
 export const MOTIONS = ['none', 'bob', 'hop', 'shake'];
 export const SLIDERS = ['sass', 'energy', 'helpfulness', 'chattiness', 'codeFocus'];
 export const LANGUAGES = ['java', 'javascript', 'python', 'c'];
@@ -76,8 +79,12 @@ export function validateDuck(value) {
     || !frames.every((f) => validFrame(f, palette.length))) return no('frames');
 
   if (!isObject(animations)) return no('animations');
+  const filled = { ...animations };
+  ANIMATION_NAMES.slice(CORE_ANIMATIONS).forEach((key) => {
+    if (filled[key] === undefined) filled[key] = animations.idle;
+  });
   for (const key of ANIMATION_NAMES) {
-    const a = animations[key];
+    const a = filled[key];
     if (!isObject(a) || !Array.isArray(a.seq) || a.seq.length < 1 || a.seq.length > MAX_SEQ
       || !a.seq.every((i) => isInt(i, 0, frames.length - 1))
       || !isInt(a.fps, 1, 12) || !MOTIONS.includes(a.motion)) return no('animations');
@@ -93,7 +100,7 @@ export function validateDuck(value) {
 
   const duck = cloneDuck({ v: VERSION, name, palette, frames, animations: {}, personality: {}, languages, roam });
   for (const key of ANIMATION_NAMES) {
-    duck.animations[key] = { seq: [...animations[key].seq], fps: animations[key].fps, motion: animations[key].motion };
+    duck.animations[key] = { seq: [...filled[key].seq], fps: filled[key].fps, motion: filled[key].motion };
   }
   for (const key of SLIDERS) duck.personality[key] = personality[key];
   return { ok: true, duck };
@@ -125,13 +132,15 @@ export function packDuck(duck) {
     const bytes = frameToBytes(frame);
     for (let i = 0; i < FRAME_BYTES; i += 2) out.push((bytes[i] << 4) | bytes[i + 1]);
   }
-  for (const key of ANIMATION_NAMES) {
+  const animation = (key) => {
     const a = duck.animations[key];
     out.push(a.seq.length, ...a.seq, a.fps, MOTIONS.indexOf(a.motion));
-  }
+  };
+  ANIMATION_NAMES.slice(0, CORE_ANIMATIONS).forEach(animation);
   for (const key of SLIDERS) out.push(duck.personality[key]);
   out.push(LANGUAGES.reduce((mask, l, bit) => mask | (duck.languages.includes(l) ? 1 << bit : 0), 0));
   out.push(ROAMS.indexOf(duck.roam));
+  ANIMATION_NAMES.slice(CORE_ANIMATIONS).forEach(animation); // later additions go last
   return Uint8Array.from(out);
 }
 
@@ -157,17 +166,19 @@ export function unpackDuck(bytes) {
     return bytesToFrame(frame);
   });
   duck.animations = {};
-  for (const key of ANIMATION_NAMES) {
+  const animation = (key) => {
     const length = take();
     const seq = Array.from({ length }, () => take());
     duck.animations[key] = { seq, fps: take(), motion: MOTIONS[take()] };
-  }
+  };
+  ANIMATION_NAMES.slice(0, CORE_ANIMATIONS).forEach(animation);
   duck.personality = {};
   for (const key of SLIDERS) duck.personality[key] = take();
   const mask = take();
   if (mask > 15) throw new Error('languages');
   duck.languages = LANGUAGES.filter((_, bit) => mask & (1 << bit));
   duck.roam = ROAMS[take()];
+  if (pos < bytes.length) ANIMATION_NAMES.slice(CORE_ANIMATIONS).forEach(animation);
   if (pos !== bytes.length) throw new Error('trailing');
   return duck;
 }

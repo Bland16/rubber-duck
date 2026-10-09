@@ -1051,3 +1051,18 @@ Each of these differs from revision 3 as approved.
   wing lines in those frames become the darkest body colour so they recolour with the duck.
   Presets now have 12 frames; the default walk is 8, 9, 10, 11 at 8 fps. Frame 1 is no longer
   used by a default animation. `upgradeWalk` brings both earlier saved forms up to date.
+- **Carried and landing (2026-10-09, at the user's request).**
+  - Two more animations, `carried` and `landing`, after the first five. A dragged duck
+    shows `carried` (frame 12, the wide-eyed pose from the second sheet, with the shake
+    motion). When dropped it shows `landing` (frame 13, the splash) for 700 ms or one pass
+    of the sequence, whichever is longer. In `strip` mode it first falls straight down to
+    the bottom at 900 px per second, still showing `carried`. A duck dropped while talking
+    or thinking does not land.
+  - Format: the five original animations stay required. `carried` and `landing` are
+    optional on the way in and are filled with a copy of `idle`; a validated duck always
+    has all seven. In a link they are written after the roam byte, and a link that ends at
+    the roam byte is still read.
+  - Presets have 14 frames and 12 colours: the splash adds two blues at the end of the
+    palette. Both new animations appear in the Animations panel and the GIF list.
+  - `upgradeWalk` is now `upgradeDuck` and also gives a preset-built saved duck the two
+    frames, the two colours and the two animations.

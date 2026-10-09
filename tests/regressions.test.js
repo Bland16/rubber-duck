@@ -60,15 +60,22 @@ test('many unclosed conditions are checked in well under a second', () => {
 });
 
 test('a duck saved before the walk cycle existed is upgraded', async () => {
-  const { upgradeWalk } = await import('../js/startup.js');
+  const { upgradeDuck: upgradeWalk } = await import('../js/startup.js');
   const { PRESETS } = await import('../data/presets.js');
   const { validateDuck } = await import('../js/duck-format.js');
-  const old = structuredClone(PRESETS[1]);
-  old.frames.length = 8;
-  old.animations.walk.seq = [0, 1];
-  old.name = 'Mine';
+  // As storage hands it over: validated, so carried and landing are copies of idle.
+  const stored = structuredClone(PRESETS[1]);
+  stored.frames.length = 8;
+  stored.palette.length -= 2;
+  stored.animations.walk.seq = [0, 1];
+  delete stored.animations.carried;
+  delete stored.animations.landing;
+  stored.name = 'Mine';
+  const old = validateDuck(stored).duck;
+  assert.deepEqual(old.animations.carried, old.animations.idle);
   const upgraded = upgradeWalk(old, PRESETS);
-  assert.deepEqual(upgraded.animations.walk, PRESETS[1].animations.walk);
+  assert.deepEqual(upgraded.animations, PRESETS[1].animations);
+  assert.deepEqual(upgraded.palette, PRESETS[1].palette);
   assert.deepEqual(upgraded.frames, PRESETS[1].frames);
   assert.equal(upgraded.name, 'Mine');
   assert.equal(validateDuck(upgraded).ok, true);
@@ -77,12 +84,22 @@ test('a duck saved before the walk cycle existed is upgraded', async () => {
   between.frames.push(between.frames[0]);
   between.animations.walk.seq = [1, 8];
   assert.deepEqual(upgradeWalk(between, PRESETS).frames, PRESETS[1].frames);
+  // The version with the walk cycle but no carried or landing pose.
+  const twelve = structuredClone(old);
+  twelve.frames = PRESETS[1].frames.slice(0, 12);
+  twelve.animations.walk = structuredClone(PRESETS[1].animations.walk);
+  assert.deepEqual(upgradeWalk(twelve, PRESETS), { ...PRESETS[1], name: 'Mine' });
+  // A carried animation someone chose on purpose is kept.
+  const chosen = structuredClone(twelve);
+  chosen.animations.carried.seq = [2];
+  assert.equal(upgradeWalk(chosen, PRESETS).frames.length, 12);
   // Left alone: a current duck, a redrawn walk frame, a changed sequence, nothing saved.
   assert.equal(upgradeWalk(PRESETS[0], PRESETS), PRESETS[0]);
   const redrawn = structuredClone(old); redrawn.frames[1] = redrawn.frames[0];
   assert.equal(upgradeWalk(redrawn, PRESETS), redrawn);
   const resequenced = structuredClone(old); resequenced.animations.walk.seq = [1];
   assert.equal(upgradeWalk(resequenced, PRESETS), resequenced);
+  assert.equal(upgradeWalk(PRESETS[2], PRESETS), PRESETS[2]);
   assert.equal(upgradeWalk(null, PRESETS), null);
 });
 

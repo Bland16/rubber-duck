@@ -1,7 +1,7 @@
 // Wiring only: creates the modules and passes the duck between them.
 
 import { decodeDuck } from './duck-format.js';
-import { chooseStartupDuck, adopt, restore, upgradeWalk } from './startup.js';
+import { chooseStartupDuck, adopt, restore, upgradeDuck } from './startup.js';
 import { createStore } from './store.js';
 import { createPicker } from './response-picker.js';
 import { createEditor, isEdited } from './editor.js';
@@ -23,7 +23,7 @@ const clearFragment = () => history.replaceState(null, '', location.pathname + l
 async function start() {
   const prefs = storage.loadPrefs();
   const fallback = PRESETS[0];
-  const loadSaved = () => upgradeWalk(storage.loadDuck(), PRESETS);
+  const loadSaved = () => upgradeDuck(storage.loadDuck(), PRESETS);
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const viewOnly = window.matchMedia(VIEW_ONLY);
   const shortWindow = window.matchMedia('(max-height: 520px)'); // matches the shorter stage in the CSS
