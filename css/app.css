@@ -49,7 +49,9 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 button[aria-pressed="true"] { background: var(--pressed); color: var(--pressed-ink); }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 /* These sit on fixed light colours in both themes, so their ring is fixed too. */
-.stage :focus-visible, .section-toggle:focus-visible, .preset:focus-visible, .frame:focus-visible { outline-color: #0b3d91; }
+.stage :focus-visible { outline-color: #0b3d91; }
+/* Drawn inside the control, so the ring is always on its own light fill. */
+.section-toggle:focus-visible, .preset:focus-visible, .frame:focus-visible { outline-color: #0b3d91; outline-offset: -5px; }
 /* The duck can be over anything: a dark ring with a white one inside it. */
 .duck:focus-visible { outline: 3px solid #0b3d91; outline-offset: 2px; box-shadow: 0 0 0 2px #ffffff; }
 
@@ -110,7 +112,7 @@ button[aria-pressed="true"] { background: var(--pressed); color: var(--pressed-i
 .editor-layout { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: flex-start; }
 .grid-column { flex: 0 0 auto; max-width: 100%; }
 .side-column { flex: 1 1 220px; min-width: 0; }
-.grid { display: block; max-width: 100%; height: auto; border: var(--border) solid var(--line); touch-action: none; cursor: crosshair; image-rendering: pixelated; }
+.grid { display: block; max-width: 100%; max-height: calc(100vh - var(--stage-height) - 32px); width: auto; height: auto; border: var(--border) solid var(--line); touch-action: none; cursor: crosshair; image-rendering: pixelated; }
 
 .palette { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-2); }
 .palette-item { display: grid; gap: 2px; justify-items: center; }
@@ -228,6 +230,13 @@ dialog label { display: block; margin-top: var(--space-2); }
 dialog .row label { margin-top: 0; }
 textarea { width: 100%; resize: vertical; }
 .privacy { margin: var(--space-2) 0; color: var(--ink-soft); }
+
+/* A short window (for example 200% zoom on a laptop) gets a shorter stage. */
+@media (max-height: 520px) {
+  :root { --stage-height: 84px; }
+  /* Two rows of controls fit the shorter stage when the toggle sits beside them. */
+  .duck-controls { grid-auto-flow: column; align-items: end; }
+}
 
 /* ── View-only mode ───────────────────────────────────────────────────── */
 

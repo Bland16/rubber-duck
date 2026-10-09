@@ -23,6 +23,7 @@ export function scan(text, config) {
   let i = 0;
   let stringReported = false;
   const templates = []; // brace depth of each open `${ ... }`
+  let noSlashLine = 0;
 
   const blank = (ch) => out.push(ch === '\n' ? '\n' : ' ');
   const newline = (inString) => {
@@ -163,9 +164,10 @@ export function scan(text, config) {
       continue;
     }
 
-    if (config.regex && ch === '/') {
+    if (config.regex && ch === '/' && noSlashLine !== line) {
       const end = regexEnd(text, i, out);
-      if (end !== -1) {
+      if (end === -2) noSlashLine = line; // nothing on this line can close a regex
+      if (end >= 0) {
         while (i < end) {
           blank(text[i]);
           i += 1;
@@ -238,8 +240,9 @@ const REGEX_AFTER_WORDS = new Set(['return', 'typeof', 'case', 'do', 'else', 'in
   'delete', 'throw', 'new', 'yield', 'await', 'instanceof']);
 
 // If the `/` at index i starts a regular-expression literal, returns the index
-// just past it (flags included); otherwise -1. A `/` is a regex when what comes
-// before it cannot end an expression.
+// just past it (flags included). Otherwise -1, or -2 when the rest of the line
+// holds no closing slash. A `/` is a regex when what comes before it cannot end
+// an expression.
 function regexEnd(text, i, out) {
   let k = out.length - 1;
   while (k >= 0 && (out[k] === ' ' || out[k] === '\t' || out[k] === '\n' || out[k] === '\r')) k -= 1;
@@ -254,7 +257,7 @@ function regexEnd(text, i, out) {
   let inClass = false;
   for (let j = i + 1; j < text.length; j += 1) {
     const ch = text[j];
-    if (ch === '\n') return -1;
+    if (ch === '\n') return -2;
     if (ch === '\\') j += 1;
     else if (ch === '[') inClass = true;
     else if (ch === ']') inClass = false;
@@ -264,7 +267,7 @@ function regexEnd(text, i, out) {
       return end;
     }
   }
-  return -1;
+  return -2;
 }
 
 function lastWord(out) {

@@ -24,6 +24,7 @@ async function start() {
   const fallback = PRESETS[0];
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const viewOnly = window.matchMedia(VIEW_ONLY);
+  const shortWindow = window.matchMedia('(max-height: 520px)'); // matches the shorter stage in the CSS
 
   const payload = payloadOf(location.hash);
   const first = chooseStartupDuck({
@@ -60,6 +61,14 @@ async function start() {
     store.replace(swapped.duck);
   }
 
+  // The same action stays available in the Export panel while a backup exists.
+  const restoreButton = document.getElementById('restore-backup');
+  const showRestore = () => { restoreButton.hidden = !storage.loadBackup(); };
+  restoreButton.addEventListener('click', () => {
+    dismissNotice();
+    restorePrevious();
+  });
+
   // ── Autosave and adoption ────────────────────────────────────────────────
 
   let saveTimer = null;
@@ -80,6 +89,7 @@ async function start() {
       mode = 'own';
       if (result.notice) present(result.notice);
       else dismissNotice();
+      showRestore();
       return;
     }
     clearTimeout(saveTimer);
@@ -177,10 +187,11 @@ async function start() {
       stage.setHost(viewer.screen, viewerScale, true);
     } else {
       viewerScale = null;
-      stage.setHost(document.getElementById('duck-layer'), 3, false);
+      stage.setHost(document.getElementById('duck-layer'), shortWindow.matches ? 2 : 3, false);
     }
   }
   viewOnly.addEventListener('change', applyMode);
+  shortWindow.addEventListener('change', applyMode);
   // A phone's address bar resizes the window constantly; only a change of
   // laptop scale needs the duck to be re-seated.
   window.addEventListener('resize', () => {
@@ -192,6 +203,7 @@ async function start() {
   applyMode();
   applyPrefs();
   present(first.notice);
+  showRestore();
 }
 
 start();

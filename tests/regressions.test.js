@@ -44,10 +44,17 @@ test('a $ in a duck name is spoken as written', () => {
 test('many unclosed conditions are checked in well under a second', () => {
   const text = 'if (a\n'.repeat(3300);
   assert.ok(text.length <= 20000);
-  for (const language of ['javascript', 'java', 'c']) {
-    const started = performance.now();
-    checkCode(text, language);
-    const took = performance.now() - started;
-    assert.ok(took < 250, `${language} took ${Math.round(took)} ms`);
+  const inputs = { 'unclosed conditions': text, 'unclosed slashes': `=${'/['.repeat(9999)}` };
+  for (const [name, input] of Object.entries(inputs)) {
+    for (const language of ['javascript', 'java', 'c']) {
+      // Best of three, so a busy machine does not fail the test.
+      let best = Infinity;
+      for (let run = 0; run < 3; run += 1) {
+        const started = performance.now();
+        checkCode(input, language);
+        best = Math.min(best, performance.now() - started);
+      }
+      assert.ok(best < 250, `${name} in ${language} took ${Math.round(best)} ms`);
+    }
   }
 });

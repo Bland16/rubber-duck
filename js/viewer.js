@@ -13,7 +13,8 @@ export function createViewer({ store }) {
   // Sizes the laptop in whole multiples of an art pixel and returns that scale.
   function layout() {
     const available = Math.min(document.documentElement.clientWidth - 32, 600);
-    const k = Math.max(2, Math.floor(available / ART.width));
+    const tall = Math.floor((window.innerHeight - 40) / ART.height); // keep it on a sideways phone's screen
+    const k = Math.max(2, Math.min(Math.floor(available / ART.width), tall));
     canvas.width = ART.width * k;
     canvas.height = ART.height * k;
     laptop.style.width = `${canvas.width}px`;

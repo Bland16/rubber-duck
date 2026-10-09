@@ -3,7 +3,7 @@
 import { validateDuck, encodeDuck, LANGUAGES } from './duck-format.js';
 import { SLIDER_INFO, traitWords, label, isBuddy } from './personality.js';
 import { isEdited } from './editor.js';
-import { showNotice, confirmAction } from './notice.js';
+import { showNotice, dismissNotice, confirmAction } from './notice.js';
 import { slug } from './export/slug.js';
 import { sheetBlob, gifBlob, canvasToBlob } from './export/sheet.js';
 import { drawCard } from './export/card.js';
@@ -167,6 +167,7 @@ export function createExportPanel({ store, presets }) {
     }
     if (isEdited(store.get(), presets)
       && !(await confirmAction('Load this duck file? It replaces your whole duck, including its name, personality and languages.', 'Load'))) return;
+    dismissNotice(); // an earlier refusal no longer applies
     store.replace(result.duck);
   });
 }

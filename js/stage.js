@@ -81,6 +81,14 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
     });
   }
 
+  const roamingPage = () => !viewer && duck().roam === 'page';
+  let lastCrowdCheck = 0;
+  // True when a duck resting away from the strip has ended up over a control.
+  function onStripOrClear(now) {
+    lastCrowdCheck = now;
+    return position.y < bounds().groundY - 1 && restsOnControl(position.x, position.y);
+  }
+
   function chooseTarget() {
     const b = bounds();
     if (!viewer && duck().roam === 'page') {
@@ -135,8 +143,10 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
     }
 
     if (state === 'idle' && !still && !dialogOpen()) {
-      if (now - lastInput > b.sleepAfterMs) enter('sleeping', now);
-      else if (now - stateSince > b.idlePauseMs) {
+      // The page can move under a resting duck (a scroll, a section opening).
+      const crowded = roamingPage() && now - lastCrowdCheck > 500 && onStripOrClear(now);
+      if (now - lastInput > b.sleepAfterMs && !crowded) enter('sleeping', now);
+      else if (crowded || now - stateSince > b.idlePauseMs) {
         target = chooseTarget();
         facingLeft = target.x < position.x;
         enter('walking', now);
@@ -365,6 +375,7 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
     refresh() {
       updateName();
       clampToHost();
+      if (speechOpen) showPage(); // re-arms or cancels the auto-close after a pause change
     },
     // Moves the duck to the fixed page layer (maker) or onto the laptop screen
     // (view-only), at the given pixel scale.

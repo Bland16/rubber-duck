@@ -1009,3 +1009,10 @@ Each of these differs from revision 3 as approved.
 - **Colours outside the tokens.** The stage, speech box, share card, laptop and grid
   checkerboard use fixed colours written where they are used, because the spec fixes them in
   both themes.
+- **Second build audit.** Fixed after it: focus rings on presets, frames and section headings
+  are drawn inside the control; in a window shorter than 520 px the stage is 84 px tall, the
+  duck is drawn at 2x and the grid shrinks to fit above the stage, so the maker stays usable
+  at 200% zoom; a roaming duck that finds itself over a control after a scroll walks away;
+  lifting Pause motion restarts an open speech box's timer; "Restore previous duck" is also a
+  button in the Export panel while a previous duck is kept; a successful file load clears an
+  earlier refusal notice; the view-only laptop is also sized to fit the window's height.
