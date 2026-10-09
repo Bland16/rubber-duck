@@ -12,6 +12,7 @@ export const DEFAULT_PREFS = {
   theme: null,
   controlsOpen: false,
   sectionsCollapsed: {},
+  path: null, // the traced walking path: [[x, y], ...] as fractions of the window
 };
 
 function read(key) {
@@ -46,6 +47,8 @@ export function loadPrefs() {
   const stored = read(PREFS);
   const prefs = { ...DEFAULT_PREFS, ...(stored && typeof stored === 'object' ? stored : {}) };
   if (typeof prefs.sectionsCollapsed !== 'object' || prefs.sectionsCollapsed === null) prefs.sectionsCollapsed = {};
+  const point = (p) => Array.isArray(p) && p.length === 2 && p.every((n) => typeof n === 'number' && n >= 0 && n <= 1);
+  if (!Array.isArray(prefs.path) || prefs.path.length < 2 || prefs.path.length > 400 || !prefs.path.every(point)) prefs.path = null;
   return prefs;
 }
 

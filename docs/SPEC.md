@@ -157,7 +157,7 @@ The animation values shown are the preset defaults.
 | `animations` | An object with exactly the five keys shown. Each value has exactly the keys `seq`, `fps`, `motion`. `seq`: array of 1 to 8 integers, each a valid frame index. `fps`: integer 1 to 12. `motion`: one of `none`, `bob`, `hop`, `shake`. |
 | `personality` | An object with exactly the five keys shown, each an integer from 0 to 100 that is a multiple of 5. |
 | `languages` | Array of 0 to 4 distinct values from `java`, `javascript`, `python`, `c`. |
-| `roam` | `strip` (the duck walks along the bottom strip) or `page` (it walks all over the page). |
+| `roam` | `strip` (the duck walks along the bottom strip), `page` (it walks all over the page), `sit` (it walks to the top right corner and stays) or `path` (it walks back and forth along a path the visitor draws). |
 
 Sprites are drawn facing right. The renderer mirrors them when the duck walks left.
 
@@ -1027,3 +1027,19 @@ Each of these differs from revision 3 as approved.
   (`#f6f3ea`), and the duck controls are closed behind a gear button until asked for. The
   share card and link-preview image still use `#9fd3e6`. A duck saved before the second
   stride existed is given it on load (`upgradeWalk` in `js/startup.js`).
+- **Dragging and two more walking modes (2026-10-09, at the user's request).**
+  - The duck can be dragged with a pointer (a move of 6 px or more is a drag, anything less
+    is still a click). Dropped in `strip` mode it walks back down to the bottom; in `page`
+    mode it carries on from there; in `sit` mode it stays where it was left until the window
+    is resized or the page reloaded; in `path` mode it rejoins the path at the nearest point.
+    Dragging is off in view-only mode. There is no keyboard way to drag; the walking modes
+    are the keyboard way to move the duck.
+  - `roam` gains `sit` and `path`. They are added after `strip` and `page` because a link
+    stores the mode's position in that list.
+  - The path is drawn on a full-window overlay opened by "Draw the path" (or by choosing the
+    mode when no path exists). Escape or Cancel closes it. A line shorter than 80 px is
+    refused. Points are kept at least 14 px apart, at most 400, as fractions of the window,
+    in `buildaduck.v1.prefs` under `path`: the path belongs to the browser, not the duck,
+    so it is not in a link or a duck file. A `path` duck with no path walks the strip. The
+    duck rests for its usual idle pause at each end of the path. Drawing needs a pointer.
+  - New file `js/path-draw.js`.

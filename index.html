@@ -102,6 +102,13 @@
               <legend>Where it walks</legend>
               <label><input type="radio" name="roam" value="strip"> Along the bottom</label>
               <label><input type="radio" name="roam" value="page"> All over the page</label>
+              <label><input type="radio" name="roam" value="sit"> Nowhere: it sits in the top right corner</label>
+              <label><input type="radio" name="roam" value="path"> Along a path I draw</label>
+              <div class="row" id="path-row" hidden>
+                <button type="button" id="draw-path">Draw the path</button>
+                <span id="path-status" class="hint"></span>
+              </div>
+              <p class="hint">You can also drag the duck anywhere with the mouse.</p>
             </fieldset>
           </div>
         </section>
@@ -180,6 +187,14 @@
         <button type="button" id="pause" aria-pressed="false">Pause motion</button>
         <button type="button" id="theme">Theme</button>
       </div>
+    </div>
+  </div>
+
+  <div id="path-overlay" class="path-overlay" hidden>
+    <canvas id="path-canvas"></canvas>
+    <div class="path-help">
+      <p id="path-help-text">Press and drag to draw the path your duck walks.</p>
+      <button type="button" id="path-cancel">Cancel</button>
     </div>
   </div>
 

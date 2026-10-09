@@ -11,7 +11,7 @@ export const ANIMATION_NAMES = ['idle', 'walk', 'squeak', 'sleep', 'thinking'];
 export const MOTIONS = ['none', 'bob', 'hop', 'shake'];
 export const SLIDERS = ['sass', 'energy', 'helpfulness', 'chattiness', 'codeFocus'];
 export const LANGUAGES = ['java', 'javascript', 'python', 'c'];
-export const ROAMS = ['strip', 'page'];
+export const ROAMS = ['strip', 'page', 'sit', 'path']; // new values go at the end: links store the index
 export const MAX_PAYLOAD = 20000;
 
 const TOP_KEYS = ['v', 'name', 'palette', 'frames', 'animations', 'personality', 'languages', 'roam'];

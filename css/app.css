@@ -173,6 +173,13 @@ input[type="number"] { width: 5rem; }
 .duck-controls button { min-height: 32px; padding: 0 var(--space-2); font-size: 0.875rem; }
 .duck-controls .controls-toggle { min-width: 40px; min-height: 40px; padding: 0; font-size: 1.375rem; line-height: 1; }
 
+#roam label { display: flex; }
+.hint { color: var(--ink-soft); font-size: 0.875rem; margin: var(--space-1) 0 0; }
+.path-overlay { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, 0.45); cursor: crosshair; touch-action: none; }
+.path-overlay canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.path-help { position: absolute; left: 50%; top: var(--space-4); transform: translateX(-50%); display: flex; gap: var(--space-3); align-items: center; padding: var(--space-2) var(--space-3); background: var(--surface); color: var(--ink); border: var(--border) solid var(--line); cursor: default; }
+.path-help p { margin: 0; }
+
 .duck-layer { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
 .duck {
   position: absolute;
@@ -185,8 +192,10 @@ input[type="number"] { width: 5rem; }
   pointer-events: auto;
   line-height: 0;
   -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
+  touch-action: none; /* the duck can be dragged */
+  cursor: grab;
 }
+.duck.dragging { cursor: grabbing; }
 .duck canvas { image-rendering: pixelated; display: block; }
 
 .speech {

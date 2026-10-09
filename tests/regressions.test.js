@@ -80,3 +80,29 @@ test('a duck saved before the second walking stride is upgraded', async () => {
   assert.equal(upgradeWalk(resequenced, PRESETS), resequenced);
   assert.equal(upgradeWalk(null, PRESETS), null);
 });
+
+test('a traced path is thinned, measured and stored as fractions of the window', async () => {
+  const { thin, lengthOf, toPath } = await import('../js/path-draw.js');
+  const line = Array.from({ length: 101 }, (_, i) => [100 + i * 4, 200]); // 400 px, a point every 4 px
+  const kept = thin(line);
+  assert.ok(kept.length < 40 && kept.length > 20);
+  assert.equal(lengthOf([[0, 0], [3, 4], [3, 14]]), 15);
+  const path = toPath(line, 1000, 800);
+  assert.deepEqual(path[0], [0.1, 0.25]);
+  assert.ok(path.every(([x, y]) => x >= 0 && x <= 1 && y >= 0 && y <= 1));
+  assert.equal(toPath([[10, 10], [20, 20]], 1000, 800), null); // a slip, not a path
+  assert.equal(toPath([[10, 10]], 1000, 800), null);
+  assert.deepEqual(toPath([[-50, 400], [2000, 400]], 1000, 800), [[0, 0.5], [1, 0.5]]); // clamped
+  const long = Array.from({ length: 5000 }, (_, i) => [(i % 2) * 900, i]);
+  assert.ok(toPath(long, 1000, 5000).length <= 400);
+});
+
+test('the walking modes survive a share link, and old links keep their meaning', async () => {
+  const { ROAMS, encodeDuck, decodeDuck } = await import('../js/duck-format.js');
+  const { PRESETS } = await import('../data/presets.js');
+  assert.deepEqual(ROAMS.slice(0, 2), ['strip', 'page']); // links store the index
+  for (const roam of ROAMS) {
+    const result = await decodeDuck(await encodeDuck({ ...PRESETS[0], roam }));
+    assert.equal(result.ok && result.duck.roam, roam);
+  }
+});

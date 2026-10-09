@@ -42,6 +42,10 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
   let lastSpeechClosed = performance.now();
   let speechOpen = null; // { pages, index, timer, tookFocus }
   let languageTouched = false;
+  let dragging = false;
+  let sitSpot = null; // where a dragged duck was left in 'sit' mode
+  let pathIndex = 0; // the path point the duck is heading for
+  let pathDir = 1;
 
   const duck = () => store.get();
   const motionOff = () => prefs.paused || reducedMotion.matches;
@@ -62,11 +66,37 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
     if (speechOpen) positionSpeech();
   }
 
+  // The traced path as duck positions in this window, or [] when there is none.
+  function pathPoints() {
+    const b = bounds();
+    const s = side();
+    const fit = (n, max) => Math.min(Math.max(0, n), Math.max(0, max));
+    return (prefs.path || []).map(([fx, fy]) => ({
+      x: fit(fx * b.width - s / 2, b.width - s),
+      y: fit(fy * b.height - s / 2, b.height - s),
+    }));
+  }
+
+  // Where the duck goes: 'strip', 'page', 'sit' or 'path'.
+  function mode() {
+    if (viewer) return 'strip';
+    const { roam } = duck();
+    return roam === 'path' && !prefs.path ? 'strip' : roam;
+  }
+
+  function sitPlace() {
+    const b = bounds();
+    return sitSpot || { x: Math.max(0, b.width - side() - 16), y: 16 };
+  }
+
   function clampToHost() {
     const b = bounds();
-    const roaming = !viewer && duck().roam === 'page' && !motionOff();
-    position.x = Math.min(Math.max(0, position.x), roaming ? b.width - side() : b.maxX);
-    position.y = roaming ? Math.min(Math.max(0, position.y), b.height - side()) : b.groundY;
+    const m = mode();
+    if (motionOff() && m === 'sit' && !dragging) position = { ...sitPlace() };
+    // Off the strip: any mode but 'strip', a duck being dragged, or one walking home.
+    const free = dragging || (motionOff() ? m === 'sit' : m !== 'strip' || state === 'walking');
+    position.x = Math.min(Math.max(0, position.x), free ? b.width - side() : b.maxX);
+    position.y = free ? Math.min(Math.max(0, position.y), b.height - side()) : b.groundY;
     place();
   }
 
@@ -81,7 +111,7 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
     });
   }
 
-  const roamingPage = () => !viewer && duck().roam === 'page';
+  const roamingPage = () => mode() === 'page';
   let lastCrowdCheck = 0;
   // True when a duck resting away from the strip has ended up over a control.
   function onStripOrClear(now) {
@@ -89,9 +119,20 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
     return position.y < bounds().groundY - 1 && restsOnControl(position.x, position.y);
   }
 
+  // The next place to walk to, or null to stay put.
   function chooseTarget() {
     const b = bounds();
-    if (!viewer && duck().roam === 'page') {
+    const m = mode();
+    if (m === 'sit') {
+      const spot = sitPlace();
+      return Math.hypot(spot.x - position.x, spot.y - position.y) < 1 ? null : spot;
+    }
+    if (m === 'path') {
+      const points = pathPoints();
+      if (pathIndex >= points.length) pathIndex = 0;
+      return points[pathIndex];
+    }
+    if (m === 'page') {
       for (let tries = 0; tries < 10; tries += 1) {
         const x = Math.random() * Math.max(1, b.width - side());
         const y = Math.random() * Math.max(1, b.height - side());
@@ -108,6 +149,25 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
     stateSince = now;
     step = 0;
     lastStepAt = now;
+  }
+
+  function walkTo(next, now = performance.now()) {
+    target = next;
+    if (Math.abs(target.x - position.x) > 1) facingLeft = target.x < position.x;
+    enter('walking', now);
+  }
+
+  // Called on reaching a path point. Returns the next point to carry on to, or
+  // null at either end of the path, where the duck rests before turning round.
+  function alongPath() {
+    const points = pathPoints();
+    const last = points.length - 1;
+    if (pathIndex > last) return null;
+    const atEnd = pathIndex <= 0 || pathIndex >= last;
+    if (pathIndex <= 0) pathDir = 1;
+    else if (pathIndex >= last) pathDir = -1;
+    pathIndex += pathDir;
+    return atEnd ? null : points[pathIndex];
   }
 
   function enterIdle(now = performance.now()) {
@@ -142,14 +202,15 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
       step += 1;
     }
 
-    if (state === 'idle' && !still && !dialogOpen()) {
+    if (dragging) {
+      // The pointer is in charge.
+    } else if (state === 'idle' && !still && !dialogOpen()) {
       // The page can move under a resting duck (a scroll, a section opening).
       const crowded = roamingPage() && now - lastCrowdCheck > 500 && onStripOrClear(now);
       if (now - lastInput > b.sleepAfterMs && !crowded) enter('sleeping', now);
       else if (crowded || now - stateSince > b.idlePauseMs) {
-        target = chooseTarget();
-        facingLeft = target.x < position.x;
-        enter('walking', now);
+        const next = chooseTarget();
+        if (next) walkTo(next, now);
       }
     } else if (state === 'walking') {
       if (still) {
@@ -163,7 +224,11 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
         const travel = b.walkSpeed * dt;
         if (distance <= travel) {
           position = { ...target };
-          enterIdle(now);
+          const onward = mode() === 'path' ? alongPath() : null;
+          if (onward) {
+            target = onward;
+            if (Math.abs(target.x - position.x) > 1) facingLeft = target.x < position.x;
+          } else enterIdle(now);
         } else {
           position.x += (dx / distance) * travel;
           position.y += (dy / distance) * travel;
@@ -331,7 +396,60 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
 
   // ── Input ────────────────────────────────────────────────────────────────
 
+  // Dragging: the duck follows the pointer, then carries on from where it was left.
+  let grab = null; // { id, dx, dy, startX, startY }
+  let swallowClick = false;
+  duckButton.addEventListener('pointerdown', (event) => {
+    if (viewer || event.button !== 0) return;
+    const rect = duckButton.getBoundingClientRect();
+    grab = { id: event.pointerId, dx: event.clientX - rect.left, dy: event.clientY - rect.top, startX: event.clientX, startY: event.clientY };
+    duckButton.setPointerCapture(event.pointerId); // a quick flick must not slip off the duck
+  });
+  duckButton.addEventListener('pointermove', (event) => {
+    if (!grab || event.pointerId !== grab.id) return;
+    if (!dragging) {
+      if (Math.hypot(event.clientX - grab.startX, event.clientY - grab.startY) < 6) return;
+      dragging = true;
+      duckButton.classList.add('dragging');
+      if (state === 'walking' || state === 'sleeping') enter('idle');
+    }
+    position = { x: event.clientX - grab.dx, y: event.clientY - grab.dy };
+    clampToHost();
+  });
+  function drop() {
+    if (!grab) return;
+    grab = null;
+    if (!dragging) return;
+    dragging = false;
+    swallowClick = true;
+    setTimeout(() => { swallowClick = false; }, 0);
+    duckButton.classList.remove('dragging');
+    const m = mode();
+    if (m === 'sit') sitSpot = { ...position };
+    if (m === 'path') {
+      // Rejoin the path at its nearest point.
+      let best = Infinity;
+      pathPoints().forEach((p, i) => {
+        const d = Math.hypot(p.x - position.x, p.y - position.y);
+        if (d < best) {
+          best = d;
+          pathIndex = i;
+        }
+      });
+    }
+    if (m === 'strip' && !motionOff() && state === 'idle') {
+      const b = bounds();
+      walkTo({ x: Math.min(position.x, b.maxX), y: b.groundY }); // back down to the bottom
+    } else {
+      if (state === 'idle') stateSince = performance.now();
+      clampToHost();
+    }
+  }
+  duckButton.addEventListener('pointerup', drop);
+  duckButton.addEventListener('pointercancel', drop);
+
   duckButton.addEventListener('click', (event) => {
+    if (swallowClick) return; // the end of a drag, not a click
     if (event.detail >= 2) {
       if (event.detail === 2) doPrompt();
     } else {
@@ -352,7 +470,12 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
   ['pointerdown', 'pointermove', 'keydown', 'wheel'].forEach((type) => {
     document.addEventListener(type, noteInput, { passive: true });
   });
-  window.addEventListener('resize', clampToHost);
+  window.addEventListener('resize', () => {
+    sitSpot = null;
+    if (state === 'walking' && mode() === 'strip') target.y = bounds().groundY;
+    if (state === 'walking' && mode() === 'path') enter('idle'); // the path points have moved
+    clampToHost();
+  });
 
   function updateName() {
     const d = duck();
@@ -372,6 +495,12 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
 
   return {
     openPasteDialog,
+    // A new path was drawn: start again from its first point.
+    pathChanged() {
+      pathIndex = 0;
+      pathDir = 1;
+      if (state === 'walking') enter('idle');
+    },
     refresh() {
       updateName();
       clampToHost();

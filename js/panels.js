@@ -87,6 +87,7 @@ export function createPersonalityPanel({ store }) {
     languagesEl.disabled = buddy;
     languagesEl.querySelectorAll('input').forEach((box) => { box.checked = duck.languages.includes(box.value); });
     roamEl.querySelectorAll('input').forEach((radio) => { radio.checked = radio.value === duck.roam; });
+    document.getElementById('path-row').hidden = duck.roam !== 'path';
     document.getElementById('paste-code').hidden = buddy;
   }
 

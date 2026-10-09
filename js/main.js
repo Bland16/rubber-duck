@@ -8,6 +8,7 @@ import { createEditor, isEdited } from './editor.js';
 import { createPersonalityPanel, createExportPanel } from './panels.js';
 import { createStage } from './stage.js';
 import { createViewer } from './viewer.js';
+import { tracePath } from './path-draw.js';
 import { showNotice, dismissNotice, confirmAction } from './notice.js';
 import * as storage from './storage.js';
 import responses from './responses.js';
@@ -172,6 +173,25 @@ async function start() {
     });
   });
   document.getElementById('paste-code').addEventListener('click', () => stage.openPasteDialog());
+
+  // The traced path belongs to this browser's window, so it is kept with the
+  // preferences and not in the duck.
+  const pathStatus = document.getElementById('path-status');
+  const showPath = () => { pathStatus.textContent = prefs.path ? '' : 'No path yet, so it walks along the bottom.'; };
+  async function drawPath() {
+    const path = await tracePath();
+    if (path) {
+      prefs.path = path;
+      savePrefs();
+      stage.pathChanged();
+    }
+    showPath();
+  }
+  document.getElementById('draw-path').addEventListener('click', drawPath);
+  document.getElementById('roam').addEventListener('change', (event) => {
+    if (event.target.value === 'path' && event.target.checked && !prefs.path) drawPath();
+  });
+  showPath();
   reducedMotion.addEventListener('change', () => stage.refresh());
 
   // ── Maker or view-only ───────────────────────────────────────────────────
