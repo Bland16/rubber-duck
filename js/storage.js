@@ -10,7 +10,7 @@ export const DEFAULT_PREFS = {
   muted: false,
   paused: false,
   theme: null,
-  controlsCollapsed: false,
+  controlsOpen: false,
   sectionsCollapsed: {},
 };
 

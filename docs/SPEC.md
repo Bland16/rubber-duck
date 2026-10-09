@@ -135,7 +135,7 @@ binary form of it (section 5.3).
   "frames": ["<base64>"],
   "animations": {
     "idle":     { "seq": [5, 5, 5, 4], "fps": 2, "motion": "none"  },
-    "walk":     { "seq": [0, 1],       "fps": 6, "motion": "bob"   },
+    "walk":     { "seq": [1, 8],       "fps": 6, "motion": "bob"   },
     "squeak":   { "seq": [2, 0],       "fps": 6, "motion": "hop"   },
     "sleep":    { "seq": [3],          "fps": 1, "motion": "bob"   },
     "thinking": { "seq": [5],          "fps": 4, "motion": "shake" }
@@ -265,9 +265,10 @@ what it does and what it produced.
 classified as body) and `BELLY_ROW`.
 
 Frame order: 0 standing, 1 walking, 2 squeaking, 3 asleep, 4 blink, 5 thinking, 6 happy,
-7 front view. Frames 0 to 3 are one drawing family and 4 to 6 another, with slightly different
-body shapes. The default idle and thinking sequences therefore use only 4 and 5, and walk and
-squeak only 0 to 2. Going from idle to walk still changes family, and the duck's outline
+7 front view, 8 second walking stride (made by the pipeline from frame 1 with its legs
+swapped, because the source sheet has one pose with feet). Frames 0 to 3 are one drawing family and 4 to 6 another, with slightly different
+body shapes. The default idle and thinking sequences therefore use only 4 and 5, and walk uses 1
+and 8, and squeak 2 and 0. Going from idle to walk still changes family, and the duck's outline
 shifts slightly when it does; this is accepted for the preset art. Frames 6 and 7 are not used
 by a default animation.
 
@@ -303,11 +304,12 @@ fallback is used. It is not needed for the current art.
 - **Main**, at 1024 px and above in two columns: Editor on the left; Personality above Export
   on the right. From 640 to 1023 px in one column: Editor, Personality, Export.
 - **Footer**: "Made by Sarah Bland", linking to the repo.
-- **Stage**: a strip 120 px tall fixed to the bottom of the window, full width, with the fixed
-  background colour `#9fd3e6` in both themes. The duck lives here (section 10).
+- **Stage**: a strip 120 px tall fixed to the bottom of the window, full width, with no
+  background and no border: the page shows through and stays clickable. The duck lives here
+  (section 10).
 - **Duck controls**: a panel inside the stage at its right end holding Paste code, Mute, Pause
-  motion and Theme. It has a collapse button; collapsed, it shows only a "Duck controls"
-  button. The collapsed state is remembered. The duck does not walk under this panel.
+  motion and Theme. It is closed until the gear button in the bottom right corner
+  (named "Duck controls") is pressed. Whether it is open is remembered. The duck does not walk under this panel.
 
 The page body has bottom padding of 136 px and `scroll-padding-bottom: 136px`, so the stage
 never hides content or a focused control.
@@ -363,8 +365,8 @@ Every other control is a native button, input or select with a visible label.
 
 ## 9. Personality
 
-Five sliders: native range inputs, 0 to 100 in steps of 5, each with a visible label and its
-current trait word.
+Five sliders: native range inputs, 0 to 100 in steps of 5, each with a visible label. The trait
+word is in the slider's `aria-valuetext` and in the chips below, not beside the slider.
 
 | Slider | 0 to 30 | 35 to 65 | 70 to 100 | What it changes |
 |---|---|---|---|---|
@@ -690,7 +692,7 @@ rules as the maker (section 14). Contents:
 
 - the title and the header line
 - a pixel-art laptop drawn on a canvas by code: a dark bezel around a screen of flat colour
-  `#9fd3e6`, above a keyboard base, scaled in whole multiples to fit the width. This is a live
+  `#f6f3ea`, above a keyboard base, scaled in whole multiples to fit the width. This is a live
   animation, not a video file, so that it can show the duck from a shared link.
 - the duck as a `<button>` positioned over the laptop screen, walking back and forth across
   it, with the accessible name "<name> the duck. Press Space to squeak." Tapping or pressing
@@ -741,7 +743,7 @@ If an export fails, an error notice names it and the page keeps working.
 
 - `buildaduck.v1.duck`: the visitor's own duck as JSON, written 500 ms after the last change
 - `buildaduck.v1.backup`: one previous duck (see below)
-- `buildaduck.v1.prefs`: `{ muted, paused, theme, controlsCollapsed, sectionsCollapsed }`
+- `buildaduck.v1.prefs`: `{ muted, paused, theme, controlsOpen, sectionsCollapsed }`
 
 Every read and write is wrapped so that a blocked or full store never breaks the page.
 
@@ -1016,3 +1018,12 @@ Each of these differs from revision 3 as approved.
   lifting Pause motion restarts an open speech box's timer; "Restore previous duck" is also a
   button in the Export panel while a previous duck is kept; a successful file load clears an
   earlier refusal notice; the view-only laptop is also sized to fit the window's height.
+- **After the first try-out (2026-10-09).** The walk used frames 0 and 1, and frame 0 has no
+  feet, so the feet flickered. The pipeline now makes a ninth frame, a second stride, and
+  the walk uses 1 and 8. The trait word beside each slider was removed at the user's request;
+  the chips below the sliders still show the words.
+- **Also after the first try-out.** At the user's request the stage has no blue background
+  (the page shows through), duck thumbnails and the laptop screen sit on a fixed cream
+  (`#f6f3ea`), and the duck controls are closed behind a gear button until asked for. The
+  share card and link-preview image still use `#9fd3e6`. A duck saved before the second
+  stride existed is given it on load (`upgradeWalk` in `js/startup.js`).

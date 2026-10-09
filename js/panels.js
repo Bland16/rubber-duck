@@ -47,12 +47,10 @@ export function createPersonalityPanel({ store }) {
   const languagesEl = document.getElementById('languages');
   const roamEl = document.getElementById('roam');
   const inputs = {};
-  const outputs = {};
 
   SLIDER_INFO.forEach((info) => {
     const id = `slider-${info.key}`;
     const input = Object.assign(document.createElement('input'), { type: 'range', id, min: '0', max: '100', step: '5' });
-    const output = Object.assign(document.createElement('output'), { htmlFor: id });
     const text = Object.assign(document.createElement('label'), { htmlFor: id, textContent: info.label });
     input.addEventListener('input', () => {
       const duck = store.get();
@@ -60,10 +58,9 @@ export function createPersonalityPanel({ store }) {
     });
     const row = document.createElement('div');
     row.className = 'slider';
-    row.append(text, input, output);
+    row.append(text, input);
     slidersEl.append(row);
     inputs[info.key] = input;
-    outputs[info.key] = output;
   });
 
   languagesEl.addEventListener('change', () => {
@@ -83,7 +80,6 @@ export function createPersonalityPanel({ store }) {
       const value = String(duck.personality[info.key]);
       if (inputs[info.key].value !== value) inputs[info.key].value = value;
       inputs[info.key].setAttribute('aria-valuetext', `${value}, ${words[index]}`);
-      outputs[info.key].textContent = words[index];
     });
     renderTraits(duck, document.getElementById('personality-label'),
       document.getElementById('trait-chips'), document.getElementById('buddy-badge'));

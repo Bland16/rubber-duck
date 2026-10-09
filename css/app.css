@@ -48,9 +48,8 @@ button { cursor: pointer; }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
 button[aria-pressed="true"] { background: var(--pressed); color: var(--pressed-ink); }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-/* These sit on fixed light colours in both themes, so their ring is fixed too. */
-.stage :focus-visible { outline-color: #0b3d91; }
-/* Drawn inside the control, so the ring is always on its own light fill. */
+/* These sit on a fixed light colour in both themes, so their ring is fixed too.
+   Drawn inside the control, so the ring is always on its own light fill. */
 .section-toggle:focus-visible, .preset:focus-visible, .frame:focus-visible { outline-color: #0b3d91; outline-offset: -5px; }
 /* The duck can be over anything: a dark ring with a white one inside it. */
 .duck:focus-visible { outline: 3px solid #0b3d91; outline-offset: 2px; box-shadow: 0 0 0 2px #ffffff; }
@@ -153,7 +152,7 @@ input[type="number"] { width: 5rem; }
 .badge { font-size: 0.875rem; background: var(--pressed); color: var(--pressed-ink); padding: 2px var(--space-2); }
 .chips { list-style: none; display: flex; flex-wrap: wrap; gap: var(--space-2); padding: 0; margin: 0 0 var(--space-3); }
 .chips li { border: 2px solid var(--line); padding: 2px var(--space-2); }
-.slider { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr) 7rem; gap: var(--space-2); align-items: center; min-height: 36px; }
+.slider { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: var(--space-2); align-items: center; min-height: 36px; }
 .slider input { width: 100%; accent-color: var(--focus); }
 
 #link-field, #viewer-link-field { flex: 1 1 200px; min-width: 0; }
@@ -166,13 +165,13 @@ input[type="number"] { width: 5rem; }
   right: 0;
   bottom: 0;
   height: var(--stage-height);
-  background: var(--water);
-  border-top: var(--border) solid #17171c;
+  pointer-events: none; /* only the controls take clicks; the page shows through */
   z-index: 10;
 }
-.duck-controls { position: absolute; right: var(--space-2); bottom: var(--space-2); display: grid; gap: var(--space-1); justify-items: end; }
+.duck-controls { pointer-events: auto; position: absolute; right: var(--space-2); bottom: var(--space-2); display: grid; gap: var(--space-1); justify-items: end; }
 .controls-body { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-1); order: -1; }
 .duck-controls button { min-height: 32px; padding: 0 var(--space-2); font-size: 0.875rem; }
+.duck-controls .controls-toggle { min-width: 40px; min-height: 40px; padding: 0; font-size: 1.375rem; line-height: 1; }
 
 .duck-layer { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
 .duck {

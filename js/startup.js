@@ -40,3 +40,18 @@ export function adopt({ duck, saved }) {
 export function restore({ duck, backup }) {
   return { duck: backup, backup: duck };
 }
+
+// Ducks saved before the presets gained a second walking stride (frame 8) walk on
+// frames 0 and 1, and frame 0 has no feet. Give those the new frame and sequence.
+export function upgradeWalk(duck, presets) {
+  if (!duck || duck.frames.length !== 8) return duck;
+  const walk = duck.animations.walk;
+  if (walk.seq.join() !== '0,1') return duck;
+  const preset = presets.find((p) => p.frames[1] === duck.frames[1]);
+  if (!preset) return duck;
+  return {
+    ...duck,
+    frames: [...duck.frames, preset.frames[8]],
+    animations: { ...duck.animations, walk: { ...walk, seq: [1, 8] } },
+  };
+}

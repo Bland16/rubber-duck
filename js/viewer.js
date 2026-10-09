@@ -25,7 +25,7 @@ export function createViewer({ store }) {
       ctx.fillRect(x * k, y * k, w * k, h * k);
     };
     rect('#2b2b33', 6, 0, 88, 58); // bezel
-    rect('#9fd3e6', ART.screen.x, ART.screen.y, ART.screen.width, ART.screen.height);
+    rect('#f6f3ea', ART.screen.x, ART.screen.y, ART.screen.width, ART.screen.height);
     rect('#8a8d99', 0, 58, 100, 3); // hinge
     rect('#c9ccd6', 0, 61, 100, 9); // base
     rect('#a7aab6', 36, 63, 28, 5); // trackpad

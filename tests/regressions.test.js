@@ -58,3 +58,25 @@ test('many unclosed conditions are checked in well under a second', () => {
     }
   }
 });
+
+test('a duck saved before the second walking stride is upgraded', async () => {
+  const { upgradeWalk } = await import('../js/startup.js');
+  const { PRESETS } = await import('../data/presets.js');
+  const { validateDuck } = await import('../js/duck-format.js');
+  const old = structuredClone(PRESETS[1]);
+  old.frames.length = 8;
+  old.animations.walk.seq = [0, 1];
+  old.name = 'Mine';
+  const upgraded = upgradeWalk(old, PRESETS);
+  assert.deepEqual(upgraded.animations.walk.seq, [1, 8]);
+  assert.equal(upgraded.frames[8], PRESETS[1].frames[8]);
+  assert.equal(upgraded.name, 'Mine');
+  assert.equal(validateDuck(upgraded).ok, true);
+  // Left alone: a current duck, a redrawn walk frame, a changed sequence, nothing saved.
+  assert.equal(upgradeWalk(PRESETS[0], PRESETS), PRESETS[0]);
+  const redrawn = structuredClone(old); redrawn.frames[1] = redrawn.frames[0];
+  assert.equal(upgradeWalk(redrawn, PRESETS), redrawn);
+  const resequenced = structuredClone(old); resequenced.animations.walk.seq = [1];
+  assert.equal(upgradeWalk(resequenced, PRESETS), resequenced);
+  assert.equal(upgradeWalk(null, PRESETS), null);
+});

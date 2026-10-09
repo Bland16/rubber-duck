@@ -15,8 +15,9 @@
   --error-ink: #7a1200;
   --notice-bg: #fff6c9;
   --notice-ink: #17171c;
-  --water: #9fd3e6;
-  --water-ink: #10222b;
+  /* The fixed light backdrop behind duck thumbnails, the same in both themes. */
+  --water: #f6f3ea;
+  --water-ink: #17171c;
 
   --space-1: 4px;
   --space-2: 8px;

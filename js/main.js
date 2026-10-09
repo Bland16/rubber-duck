@@ -1,7 +1,7 @@
 // Wiring only: creates the modules and passes the duck between them.
 
 import { decodeDuck } from './duck-format.js';
-import { chooseStartupDuck, adopt, restore } from './startup.js';
+import { chooseStartupDuck, adopt, restore, upgradeWalk } from './startup.js';
 import { createStore } from './store.js';
 import { createPicker } from './response-picker.js';
 import { createEditor, isEdited } from './editor.js';
@@ -22,6 +22,7 @@ const clearFragment = () => history.replaceState(null, '', location.pathname + l
 async function start() {
   const prefs = storage.loadPrefs();
   const fallback = PRESETS[0];
+  const loadSaved = () => upgradeWalk(storage.loadDuck(), PRESETS);
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const viewOnly = window.matchMedia(VIEW_ONLY);
   const shortWindow = window.matchMedia('(max-height: 520px)'); // matches the shorter stage in the CSS
@@ -29,7 +30,7 @@ async function start() {
   const payload = payloadOf(location.hash);
   const first = chooseStartupDuck({
     payloadResult: payload === null ? null : await decodeDuck(payload),
-    saved: storage.loadDuck(),
+    saved: loadSaved(),
     fallback,
   });
   let mode = first.mode;
@@ -50,7 +51,7 @@ async function start() {
   function backToMine() {
     clearFragment();
     mode = 'own';
-    store.replace(storage.loadDuck() || fallback, 'load');
+    store.replace(loadSaved() || fallback, 'load');
   }
 
   function restorePrevious() {
@@ -82,7 +83,7 @@ async function start() {
   store.subscribe((duck, reason) => {
     if (reason !== 'edit') return;
     if (mode === 'visiting') {
-      const result = adopt({ duck, saved: storage.loadDuck() });
+      const result = adopt({ duck, saved: loadSaved() });
       if (result.backup) storage.saveBackup(result.backup);
       storage.saveDuck(result.save);
       clearFragment();
@@ -109,7 +110,7 @@ async function start() {
       return;
     }
     flush();
-    const chosen = chooseStartupDuck({ payloadResult: await decodeDuck(next), saved: storage.loadDuck(), fallback });
+    const chosen = chooseStartupDuck({ payloadResult: await decodeDuck(next), saved: loadSaved(), fallback });
     mode = chosen.mode;
     if (mode === 'own') clearFragment();
     store.replace(chosen.duck, 'load');
@@ -137,8 +138,8 @@ async function start() {
     pressed(['mute', 'viewer-mute'], prefs.muted);
     pressed(['pause', 'viewer-pause'], prefs.paused);
     const toggle = document.getElementById('controls-toggle');
-    toggle.setAttribute('aria-expanded', String(!prefs.controlsCollapsed));
-    document.getElementById('controls-body').hidden = prefs.controlsCollapsed;
+    toggle.setAttribute('aria-expanded', String(Boolean(prefs.controlsOpen)));
+    document.getElementById('controls-body').hidden = !prefs.controlsOpen;
     document.querySelectorAll('.section-toggle').forEach((button) => {
       const body = document.getElementById(button.getAttribute('aria-controls'));
       const collapsed = Boolean(prefs.sectionsCollapsed[body.id]);
@@ -155,7 +156,7 @@ async function start() {
   };
   ['mute', 'viewer-mute'].forEach((id) => document.getElementById(id).addEventListener('click', toggle('muted')));
   ['pause', 'viewer-pause'].forEach((id) => document.getElementById(id).addEventListener('click', toggle('paused')));
-  document.getElementById('controls-toggle').addEventListener('click', toggle('controlsCollapsed'));
+  document.getElementById('controls-toggle').addEventListener('click', toggle('controlsOpen'));
   document.getElementById('theme').addEventListener('click', () => {
     const current = prefs.theme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     prefs.theme = current === 'dark' ? 'light' : 'dark';

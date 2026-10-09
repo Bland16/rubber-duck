@@ -44,7 +44,7 @@ RECOLOURS = {
 
 ANIMATIONS = {
     "idle": {"seq": [5, 5, 5, 4], "fps": 2, "motion": "none"},
-    "walk": {"seq": [0, 1], "fps": 6, "motion": "bob"},
+    "walk": {"seq": [1, 8], "fps": 6, "motion": "bob"},
     "squeak": {"seq": [2, 0], "fps": 6, "motion": "hop"},
     "sleep": {"seq": [3], "fps": 1, "motion": "bob"},
     "thinking": {"seq": [5], "fps": 4, "motion": "shake"},
@@ -254,6 +254,49 @@ def place(indexed, belly, centre, belly_row, centre_col):
     return canvas, (left, top, left + w, top + h)
 
 
+def second_stride(frame, belly_row, body_slots, outline_slot):
+    """The walking pose with its legs swapped, so the walk has feet in both frames.
+
+    The source sheet has one pose with feet. Here the front leg's shape is mirrored
+    onto the back hip (a leg trailing behind) and the back leg's shape is moved to
+    the front hip (a planted leg).
+    """
+    h, w = frame.shape
+    edge = belly_row + 1  # the outline row under the belly
+    keep = set(body_slots) | {outline_slot}
+    body = frame.copy()
+    body[edge + 1:] = 0
+    # Drop anything above the belly row that is not joined to the duck (a raised toe).
+    seen = np.zeros_like(body, dtype=bool)
+    stack = [(int(np.argmax(body.any(axis=1))), int(np.argmax(body[np.argmax(body.any(axis=1))] > 0)))]
+    while stack:
+        y, x = stack.pop()
+        if y < 0 or x < 0 or y >= h or x >= w or seen[y, x] or not body[y, x]:
+            continue
+        seen[y, x] = True
+        stack += [(y + 1, x), (y - 1, x), (y, x + 1), (y, x - 1)]
+    body[~seen] = 0
+    # Hips: leg-coloured cells that interrupt the belly outline.
+    hips = [x for x in range(w) if body[edge, x] and body[edge, x] not in keep]
+    if len(hips) != 2:
+        fail(f"walking pose: expected 2 hips under the belly, found {len(hips)}")
+    back_hip, front_hip = hips
+    hip_colour = body[edge, back_hip]
+
+    legs = np.where(body == 0, frame, 0)
+    split = (back_hip + front_hip) // 2
+    out = body.copy()
+    for y, x in zip(*np.nonzero(legs)):
+        if x <= split:
+            nx = x + (front_hip - back_hip)   # back leg, moved under the front hip
+        else:
+            nx = back_hip - (x - front_hip)   # front leg, mirrored under the back hip
+        if 0 <= nx < w and out[y, nx] == 0:
+            out[y, nx] = legs[y, x]
+    out[edge, back_hip] = out[edge, front_hip] = hip_colour
+    return out
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Output
 # ─────────────────────────────────────────────────────────────────────────────
@@ -365,6 +408,14 @@ def main():
         if box[0] < 1 or box[2] - 1 > 30 or box[1] < 2:
             fail(f"{name} leaves no motion margin: {box}")
         frames.append(canvas)
+
+    outline_slot = max(range(len(centres)), key=lambda i: -luma(centres[i])) + 1
+    stride = second_stride(frames[1], belly_row, body_slots, outline_slot)
+    cols = np.where(stride.any(axis=0))[0]
+    if cols.min() < 1 or cols.max() > 30:
+        fail(f"second stride leaves no motion margin: columns {cols.min()}-{cols.max()}")
+    print(f"  [PLACE] walking 2 (made from walking): columns {cols.min()}-{cols.max()}")
+    frames.append(stride)
 
     palettes = {"Classic": centres}
     for name, (light, dark) in RECOLOURS.items():
