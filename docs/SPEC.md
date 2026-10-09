@@ -135,7 +135,7 @@ binary form of it (section 5.3).
   "frames": ["<base64>"],
   "animations": {
     "idle":     { "seq": [5, 5, 5, 4], "fps": 2, "motion": "none"  },
-    "walk":     { "seq": [1, 8],       "fps": 6, "motion": "bob"   },
+    "walk":     { "seq": [8, 9, 10, 11], "fps": 8, "motion": "bob" },
     "squeak":   { "seq": [2, 0],       "fps": 6, "motion": "hop"   },
     "sleep":    { "seq": [3],          "fps": 1, "motion": "bob"   },
     "thinking": { "seq": [5],          "fps": 4, "motion": "shake" }
@@ -265,10 +265,10 @@ what it does and what it produced.
 classified as body) and `BELLY_ROW`.
 
 Frame order: 0 standing, 1 walking, 2 squeaking, 3 asleep, 4 blink, 5 thinking, 6 happy,
-7 front view, 8 second walking stride (made by the pipeline from frame 1 with its legs
-swapped, because the source sheet has one pose with feet). Frames 0 to 3 are one drawing family and 4 to 6 another, with slightly different
-body shapes. The default idle and thinking sequences therefore use only 4 and 5, and walk uses 1
-and 8, and squeak 2 and 0. Going from idle to walk still changes family, and the duck's outline
+7 front view, 8 to 11 a four-frame walk cycle taken from a second source sheet,
+`tools/source/ducks2.png` (the first four poses of its third row). Frames 0 to 3 are one drawing family and 4 to 6 another, with slightly different
+body shapes. The default idle and thinking sequences therefore use only 4 and 5, and walk uses 8
+to 11, and squeak 2 and 0. Going from idle to walk still changes family, and the duck's outline
 shifts slightly when it does; this is accepted for the preset art. Frames 6 and 7 are not used
 by a default animation.
 
@@ -1043,3 +1043,11 @@ Each of these differs from revision 3 as approved.
     so it is not in a link or a duck file. A `path` duck with no path walks the strip. The
     duck rests for its usual idle pause at each end of the path. Drawing needs a pointer.
   - New file `js/path-draw.js`.
+- **Walk cycle from the user's second sheet (2026-10-09).** The made-up second stride is
+  gone. The pipeline reads four walk frames from `tools/source/ducks2.png` (art pixels of
+  about 3.2 source pixels), maps them onto the palette already built from the first sheet,
+  and anchors them with the same belly row, so frames 0 to 7 and the palette are unchanged.
+  A stride whose legs are a row too long stands on row 31 and lifts the body one row. Brown
+  wing lines in those frames become the darkest body colour so they recolour with the duck.
+  Presets now have 12 frames; the default walk is 8, 9, 10, 11 at 8 fps. Frame 1 is no longer
+  used by a default animation. `upgradeWalk` brings both earlier saved forms up to date.

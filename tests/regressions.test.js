@@ -59,7 +59,7 @@ test('many unclosed conditions are checked in well under a second', () => {
   }
 });
 
-test('a duck saved before the second walking stride is upgraded', async () => {
+test('a duck saved before the walk cycle existed is upgraded', async () => {
   const { upgradeWalk } = await import('../js/startup.js');
   const { PRESETS } = await import('../data/presets.js');
   const { validateDuck } = await import('../js/duck-format.js');
@@ -68,10 +68,15 @@ test('a duck saved before the second walking stride is upgraded', async () => {
   old.animations.walk.seq = [0, 1];
   old.name = 'Mine';
   const upgraded = upgradeWalk(old, PRESETS);
-  assert.deepEqual(upgraded.animations.walk.seq, [1, 8]);
-  assert.equal(upgraded.frames[8], PRESETS[1].frames[8]);
+  assert.deepEqual(upgraded.animations.walk, PRESETS[1].animations.walk);
+  assert.deepEqual(upgraded.frames, PRESETS[1].frames);
   assert.equal(upgraded.name, 'Mine');
   assert.equal(validateDuck(upgraded).ok, true);
+  // The in-between version: nine frames, walking on 1 and a made-up frame 8.
+  const between = structuredClone(old);
+  between.frames.push(between.frames[0]);
+  between.animations.walk.seq = [1, 8];
+  assert.deepEqual(upgradeWalk(between, PRESETS).frames, PRESETS[1].frames);
   // Left alone: a current duck, a redrawn walk frame, a changed sequence, nothing saved.
   assert.equal(upgradeWalk(PRESETS[0], PRESETS), PRESETS[0]);
   const redrawn = structuredClone(old); redrawn.frames[1] = redrawn.frames[0];

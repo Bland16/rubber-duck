@@ -1,5 +1,5 @@
 # sprite_pipeline.py
-# Authoring-time converter: tools/source/ducks.png -> data/presets.js
+# Authoring-time converter: tools/source/ducks.png and ducks2.png -> data/presets.js
 # Adapted from campus_school/sprite_tools_new.py (background detection, mask,
 # flood-fill labelling). The site never runs this.
 
@@ -17,6 +17,11 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 SOURCE = os.path.join(HERE, "source", "ducks.png")
+# A second, smaller sheet (32 poses). Only its four-frame walk cycle is used.
+SOURCE_2 = os.path.join(HERE, "source", "ducks2.png")
+SOURCE_2_POSES = 32
+SOURCE_2_PITCH = (2.8, 3.8)
+SOURCE_2_WALK = [16, 17, 18, 19]   # reading order: the first four poses of the third row
 OUT_JS = os.path.join(ROOT, "data", "presets.js")
 OUT_DIR = os.path.join(HERE, "out")
 OUT_SHEET = os.path.join(OUT_DIR, "contact_sheet.png")
@@ -44,7 +49,7 @@ RECOLOURS = {
 
 ANIMATIONS = {
     "idle": {"seq": [5, 5, 5, 4], "fps": 2, "motion": "none"},
-    "walk": {"seq": [1, 8], "fps": 6, "motion": "bob"},
+    "walk": {"seq": [8, 9, 10, 11], "fps": 8, "motion": "bob"},
     "squeak": {"seq": [2, 0], "fps": 6, "motion": "hop"},
     "sleep": {"seq": [3], "fps": 1, "motion": "bob"},
     "thinking": {"seq": [5], "fps": 4, "motion": "shake"},
@@ -217,6 +222,11 @@ def is_body(c):
     return BODY_HUE[0] <= h * 360 <= BODY_HUE[1] and s >= BODY_MIN_SAT
 
 
+def is_brown(c):
+    h, _, v = colorsys.rgb_to_hsv(c[0] / 255, c[1] / 255, c[2] / 255)
+    return 20 <= h * 360 <= 55 and v < 0.6
+
+
 def hex_of(c):
     return "#%02x%02x%02x" % tuple(c)
 
@@ -229,11 +239,11 @@ def rgb_of(h):
 # Anchoring
 # ─────────────────────────────────────────────────────────────────────────────
 
-def anchor_info(indexed, body_slots):
+def anchor_info(indexed, body_slots, min_cells=1):
     """Belly row, feet rows below it, and belly centre column for one pose."""
     arr = np.array(indexed)
     body = np.isin(arr, list(body_slots))
-    rows = np.where(body.any(axis=1))[0]
+    rows = np.where(body.sum(axis=1) >= min_cells)[0]  # min_cells skips a stray body-coloured cell in a foot
     belly = int(rows.max())
     feet = arr.shape[0] - 1 - belly
     band = body[max(0, belly - 7):belly + 1]
@@ -252,49 +262,6 @@ def place(indexed, belly, centre, belly_row, centre_col):
         return None, (left, top, left + w, top + h)
     canvas[top:top + h, left:left + w] = arr
     return canvas, (left, top, left + w, top + h)
-
-
-def second_stride(frame, belly_row, body_slots, outline_slot):
-    """The walking pose with its legs swapped, so the walk has feet in both frames.
-
-    The source sheet has one pose with feet. Here the front leg's shape is mirrored
-    onto the back hip (a leg trailing behind) and the back leg's shape is moved to
-    the front hip (a planted leg).
-    """
-    h, w = frame.shape
-    edge = belly_row + 1  # the outline row under the belly
-    keep = set(body_slots) | {outline_slot}
-    body = frame.copy()
-    body[edge + 1:] = 0
-    # Drop anything above the belly row that is not joined to the duck (a raised toe).
-    seen = np.zeros_like(body, dtype=bool)
-    stack = [(int(np.argmax(body.any(axis=1))), int(np.argmax(body[np.argmax(body.any(axis=1))] > 0)))]
-    while stack:
-        y, x = stack.pop()
-        if y < 0 or x < 0 or y >= h or x >= w or seen[y, x] or not body[y, x]:
-            continue
-        seen[y, x] = True
-        stack += [(y + 1, x), (y - 1, x), (y, x + 1), (y, x - 1)]
-    body[~seen] = 0
-    # Hips: leg-coloured cells that interrupt the belly outline.
-    hips = [x for x in range(w) if body[edge, x] and body[edge, x] not in keep]
-    if len(hips) != 2:
-        fail(f"walking pose: expected 2 hips under the belly, found {len(hips)}")
-    back_hip, front_hip = hips
-    hip_colour = body[edge, back_hip]
-
-    legs = np.where(body == 0, frame, 0)
-    split = (back_hip + front_hip) // 2
-    out = body.copy()
-    for y, x in zip(*np.nonzero(legs)):
-        if x <= split:
-            nx = x + (front_hip - back_hip)   # back leg, moved under the front hip
-        else:
-            nx = back_hip - (x - front_hip)   # front leg, mirrored under the back hip
-        if 0 <= nx < w and out[y, nx] == 0:
-            out[y, nx] = legs[y, x]
-    out[edge, back_hip] = out[edge, front_hip] = hip_colour
-    return out
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -409,13 +376,49 @@ def main():
             fail(f"{name} leaves no motion margin: {box}")
         frames.append(canvas)
 
-    outline_slot = max(range(len(centres)), key=lambda i: -luma(centres[i])) + 1
-    stride = second_stride(frames[1], belly_row, body_slots, outline_slot)
-    cols = np.where(stride.any(axis=0))[0]
-    if cols.min() < 1 or cols.max() > 30:
-        fail(f"second stride leaves no motion margin: columns {cols.min()}-{cols.max()}")
-    print(f"  [PLACE] walking 2 (made from walking): columns {cols.min()}-{cols.max()}")
-    frames.append(stride)
+    # The walk cycle from the second sheet. It uses the palette and the anchor
+    # already fixed above, so frames 0 to 7 do not change when it is added.
+    global PITCH_RANGE
+    brown_slots = [i + 1 for i, c in enumerate(centres) if is_brown(c) and i + 1 not in body_slots]
+    shade_slot = min(body_slots, key=lambda k: luma(centres[k - 1]))
+    rgb2 = np.array(Image.open(SOURCE_2).convert("RGB"))
+    mask2 = background_mask(rgb2, detect_background(rgb2))
+    boxes2 = [b for b in components(~mask2) if b[3] - b[1] > 40]   # drops loose specks
+    if len(boxes2) != SOURCE_2_POSES:
+        fail(f"second sheet: expected {SOURCE_2_POSES} poses, found {len(boxes2)}")
+    boxes2 = reading_order(boxes2)
+    first_pitch, PITCH_RANGE = PITCH_RANGE, SOURCE_2_PITCH
+    for n, i in enumerate(SOURCE_2_WALK):
+        x0, y0, x1, y1 = boxes2[i]
+        pad = 4
+        ya, yb = max(0, y0 - pad), min(rgb2.shape[0], y1 + pad)
+        xa, xb = max(0, x0 - pad), min(rgb2.shape[1], x1 + pad)
+        cells, pitch = sample_cells(rgb2[ya:yb, xa:xb], mask2[ya:yb, xa:xb])
+        pose = [[0 if c is None else slot(c) for c in row] for row in trim(cells)]
+        belly, feet, centre = anchor_info(pose, body_slots, min_cells=6)
+        # This sheet draws the wing lines in brown, which shows on a recoloured
+        # duck. Above the belly, brown that is not next to the beak becomes shade.
+        arr = np.array(pose)
+        beak = np.isin(arr, [i + 1 for i, c in enumerate(centres) if not is_body(c) and not is_brown(c) and luma(c) >= OUTLINE_LUMA])
+        near_beak = np.zeros_like(beak)
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                near_beak |= np.roll(np.roll(beak, dy, axis=0), dx, axis=1)
+        wing = np.isin(arr, brown_slots) & ~near_beak
+        wing[belly + 1:] = False
+        arr[wing] = shade_slot
+        pose = arr.tolist()
+        # A stride with long legs stands on the bottom row and lifts the body a row.
+        lift = max(0, feet - (SIZE - 1 - belly_row))
+        canvas, box = place(pose, belly, centre, belly_row - lift, centre_col)
+        if canvas is None:
+            fail(f"walk {n + 1} does not fit the {SIZE}x{SIZE} canvas: {box} (feet {feet})")
+        print(f"  [PLACE] walk {n + 1}: pitch {pitch[0]:.2f} x {pitch[1]:.2f}, "
+              f"columns {box[0]}-{box[2] - 1}, rows {box[1]}-{box[3] - 1}")
+        if box[0] < 1 or box[2] - 1 > 30 or box[1] < 2:
+            fail(f"walk {n + 1} leaves no motion margin: {box}")
+        frames.append(canvas)
+    PITCH_RANGE = first_pitch
 
     palettes = {"Classic": centres}
     for name, (light, dark) in RECOLOURS.items():

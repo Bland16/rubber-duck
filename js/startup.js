@@ -41,17 +41,20 @@ export function restore({ duck, backup }) {
   return { duck: backup, backup: duck };
 }
 
-// Ducks saved before the presets gained a second walking stride (frame 8) walk on
-// frames 0 and 1, and frame 0 has no feet. Give those the new frame and sequence.
+// Ducks saved before the presets had a real walk cycle (frames 8 to 11) walk on
+// the standing pose and one stride, or on that stride and a made-up second one.
+// Give those the new frames and sequence.
 export function upgradeWalk(duck, presets) {
-  if (!duck || duck.frames.length !== 8) return duck;
+  if (!duck) return duck;
   const walk = duck.animations.walk;
-  if (walk.seq.join() !== '0,1') return duck;
+  const first = duck.frames.length === 8 && walk.seq.join() === '0,1';
+  const second = duck.frames.length === 9 && walk.seq.join() === '1,8';
+  if (!first && !second) return duck;
   const preset = presets.find((p) => p.frames[1] === duck.frames[1]);
   if (!preset) return duck;
   return {
     ...duck,
-    frames: [...duck.frames, preset.frames[8]],
-    animations: { ...duck.animations, walk: { ...walk, seq: [1, 8] } },
+    frames: [...duck.frames.slice(0, 8), ...preset.frames.slice(8)],
+    animations: { ...duck.animations, walk: { ...preset.animations.walk } },
   };
 }
