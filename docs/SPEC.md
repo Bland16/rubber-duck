@@ -135,7 +135,7 @@ binary form of it (section 5.3).
   "frames": ["<base64>"],
   "animations": {
     "idle":     { "seq": [5, 5, 5, 4], "fps": 2, "motion": "none"  },
-    "walk":     { "seq": [8, 9, 10, 11, 14, 15], "fps": 10, "motion": "bob" },
+    "walk":     { "seq": [8, 9, 10, 11], "fps": 10, "motion": "bob" },
     "squeak":   { "seq": [2, 0],       "fps": 6, "motion": "hop"   },
     "sleep":    { "seq": [3],          "fps": 1, "motion": "bob"   },
     "thinking": { "seq": [5],          "fps": 4, "motion": "shake" }
@@ -265,10 +265,10 @@ what it does and what it produced.
 classified as body) and `BELLY_ROW`.
 
 Frame order: 0 standing, 1 walking, 2 squeaking, 3 asleep, 4 blink, 5 thinking, 6 happy,
-7 front view, 8 to 11 and 14 to 15 a six-frame walk cycle from the top row of
+7 front view, 8 to 11 a four-frame walk cycle, the first four poses of
 `tools/source/walk3.png`, 12 carried and 13 landing from `tools/source/ducks2.png`. Frames 0 to 3 are one drawing family and 4 to 6 another, with slightly different
 body shapes. The default idle and thinking sequences therefore use only 4 and 5, and walk uses 8
-to 11 then 14 and 15, and squeak 2 and 0. Going from idle to walk still changes family, and the duck's outline
+to 11, and squeak 2 and 0. Going from idle to walk still changes family, and the duck's outline
 shifts slightly when it does; this is accepted for the preset art. Frames 6 and 7 are not used
 by a default animation.
 
@@ -1080,3 +1080,9 @@ Each of these differs from revision 3 as approved.
   frames, so the frame limit went from 16 to 20 to leave room to add frames. `upgradeDuck`
   swaps both earlier cycles by hash and adds the two frames to a duck still on the default
   four-step walk.
+- **Back to a four-frame walk (2026-10-09, the user's choice).** The walk is the first four
+  poses of `walk3.png`, frames 8 to 11, at 10 fps. Frames 14 and 15 are gone, so presets
+  have 14 frames again; the frame limit stays at 20. A stray line beside the third walk
+  frame, leaked from the neighbouring pose on the sheet, is removed: walk poses keep only
+  their largest connected group of cells. `upgradeDuck` cleans that frame and drops the
+  two extra frames from a saved duck unless an animation still uses them.

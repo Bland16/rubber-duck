@@ -49,11 +49,15 @@ export function restore({ duck, backup }) {
 //     so a walk someone has redrawn is left alone.
 //  3. Before the carried and landing poses (frames 12 and 13) existed, those two
 //     animations were filled in as copies of idle.
-//  4. The walk grew from four frames to six (frames 14 and 15).
+//  4. For a while the walk had six frames (14 and 15 were the extra two) and
+//     its third frame carried a stray line. The line is cleaned, and the extra
+//     frames are dropped unless an animation was pointed at them on purpose.
 const OLD_WALK_CYCLES = [
   [260288631, 3348737659, 4060367774, 3249513251],
   [2727605289, 4206680096, 3116754440, 688719657],
 ];
+const STRAY_LINE_FRAME = 2766044795; // frame 10 before the clean-up
+const EXTRA_WALK_FRAMES = [1653668924, 2423067582]; // frames 14 and 15
 function hash(text) {
   let h = 5381;
   for (let i = 0; i < text.length; i += 1) h = ((h * 33) ^ text.charCodeAt(i)) >>> 0;
@@ -65,7 +69,7 @@ export function upgradeDuck(duck, presets) {
   const preset = presets[0]; // every preset has the same frames and animations
   if (duck.frames[1] !== preset.frames[1]) return duck;
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-  const fourStep = { seq: [8, 9, 10, 11], fps: 8, motion: 'bob' };
+  const fourStep = { ...preset.animations.walk, seq: [...preset.animations.walk.seq] };
   let next = duck;
 
   const walk = next.animations.walk.seq.join();
@@ -81,7 +85,9 @@ export function upgradeDuck(duck, presets) {
     && OLD_WALK_CYCLES.some((cycle) => cycle.every((h, i) => hash(next.frames[8 + i]) === h))) {
     const frames = [...next.frames];
     frames.splice(8, 4, ...preset.frames.slice(8, 12));
-    next = { ...next, frames };
+    // Those cycles ran at 8 frames a second by default; carry the new default over.
+    const untouched = same(next.animations.walk, { seq: [8, 9, 10, 11], fps: 8, motion: 'bob' });
+    next = { ...next, frames, animations: untouched ? { ...next.animations, walk: fourStep } : next.animations };
   }
 
   const old = preset.palette.length - 2; // the splash added two colours at the end
@@ -95,13 +101,17 @@ export function upgradeDuck(duck, presets) {
     };
   }
 
-  if (next.frames.length === 14 && next.frames[8] === preset.frames[8] && next.frames[12] === preset.frames[12]
-    && same(next.animations.walk, fourStep)) {
-    next = {
-      ...next,
-      frames: [...next.frames, ...preset.frames.slice(14)],
-      animations: { ...next.animations, walk: { ...preset.animations.walk, seq: [...preset.animations.walk.seq] } },
-    };
+  if (next.frames.length > 10 && hash(next.frames[10]) === STRAY_LINE_FRAME) {
+    const frames = [...next.frames];
+    frames[10] = preset.frames[10];
+    next = { ...next, frames };
+  }
+  if (next.frames.length === 16 && EXTRA_WALK_FRAMES.every((h, i) => hash(next.frames[14 + i]) === h)) {
+    let { animations } = next;
+    if (animations.walk.seq.join() === '8,9,10,11,14,15') animations = { ...animations, walk: fourStep };
+    if (!Object.values(animations).some((a) => a.seq.some((i) => i >= 14))) {
+      next = { ...next, frames: next.frames.slice(0, 14), animations };
+    }
   }
   return next;
 }

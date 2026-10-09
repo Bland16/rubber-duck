@@ -87,13 +87,8 @@ test('a duck saved before the walk cycle existed is upgraded', async () => {
   // The version with the walk cycle but no carried or landing pose.
   const twelve = structuredClone(old);
   twelve.frames = PRESETS[1].frames.slice(0, 12);
-  twelve.animations.walk = { seq: [8, 9, 10, 11], fps: 8, motion: 'bob' };
+  twelve.animations.walk = structuredClone(PRESETS[1].animations.walk);
   assert.deepEqual(upgradeWalk(twelve, PRESETS), { ...PRESETS[1], name: 'Mine' });
-  // A four-step walk someone slowed down keeps its four steps.
-  const slowed = structuredClone(PRESETS[1]);
-  slowed.frames.length = 14;
-  slowed.animations.walk = { seq: [8, 9, 10, 11], fps: 3, motion: 'bob' };
-  assert.equal(upgradeWalk(slowed, PRESETS), slowed);
   // A carried animation someone chose on purpose is kept.
   const chosen = structuredClone(twelve);
   chosen.animations.carried.seq = [2];

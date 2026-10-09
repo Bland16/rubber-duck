@@ -20,8 +20,7 @@ SOURCE = os.path.join(HERE, "source", "ducks.png")
 # Later sheets, in the order their poses become frames 8 onwards:
 # (file, poses on the sheet, source pixels per art pixel, crop padding in source
 #  pixels, [(pose in reading order, name, may add palette colours)])
-# The walk cycle is the top row of walk3.png. Its last two poses come after the
-# reactions so that frames 12 and 13 keep their numbers.
+# The walk cycle is the first four poses of walk3.png.
 EXTRA_SHEETS = [
     # Twelve walking poses, packed closely: no padding, or a neighbour leaks in.
     ("walk3.png", 12, (5.2, 6.8), 0,
@@ -29,8 +28,6 @@ EXTRA_SHEETS = [
     # A sheet of 32 small poses; two reactions are used.
     ("ducks2.png", 32, (2.8, 3.8), 4,
      [(21, "carried", False), (29, "landing", True)]),
-    ("walk3.png", 12, (5.2, 6.8), 0,
-     [(4, "walk 5", False), (5, "walk 6", False)]),
 ]
 OUT_JS = os.path.join(ROOT, "data", "presets.js")
 OUT_DIR = os.path.join(HERE, "out")
@@ -59,7 +56,7 @@ RECOLOURS = {
 
 ANIMATIONS = {
     "idle": {"seq": [5, 5, 5, 4], "fps": 2, "motion": "none"},
-    "walk": {"seq": [8, 9, 10, 11, 14, 15], "fps": 10, "motion": "bob"},
+    "walk": {"seq": [8, 9, 10, 11], "fps": 10, "motion": "bob"},
     "squeak": {"seq": [2, 0], "fps": 6, "motion": "hop"},
     "sleep": {"seq": [3], "fps": 1, "motion": "bob"},
     "thinking": {"seq": [5], "fps": 4, "motion": "shake"},
@@ -285,6 +282,32 @@ def place(indexed, belly, centre, belly_row, centre_col):
 # Output
 # ─────────────────────────────────────────────────────────────────────────────
 
+def largest_piece(arr):
+    """Clears every cell not joined (corners count) to the biggest group of cells."""
+    h, w = arr.shape
+    seen = np.zeros((h, w), dtype=bool)
+    best = []
+    for sy, sx in zip(*np.nonzero(arr)):
+        if seen[sy, sx]:
+            continue
+        group, stack = [], [(sy, sx)]
+        seen[sy, sx] = True
+        while stack:
+            y, x = stack.pop()
+            group.append((y, x))
+            for ny in range(max(0, y - 1), min(h, y + 2)):
+                for nx in range(max(0, x - 1), min(w, x + 2)):
+                    if arr[ny, nx] and not seen[ny, nx]:
+                        seen[ny, nx] = True
+                        stack.append((ny, nx))
+        if len(group) > len(best):
+            best = group
+    out = np.zeros_like(arr)
+    for y, x in best:
+        out[y, x] = arr[y, x]
+    return out
+
+
 def recolour(palette, body_slots, light, dark):
     out = list(palette)
     ordered = sorted(body_slots, key=lambda s: -luma(palette[s - 1]))
@@ -438,6 +461,8 @@ def main():
                 arr[under] = max(range(len(centres)), key=lambda k: -luma(centres[k])) + 1
             wing[belly + 1:] = False
             arr[wing] = shade_slot
+            if label.startswith("walk"):
+                arr = largest_piece(arr)   # a neighbour's edge can leak into the crop
             pose = arr.tolist()
             # A stride with long legs stands on the bottom row and lifts the body a row.
             lift = max(0, feet - (SIZE - 1 - belly_row))
