@@ -265,8 +265,8 @@ what it does and what it produced.
 classified as body) and `BELLY_ROW`.
 
 Frame order: 0 standing, 1 walking, 2 squeaking, 3 asleep, 4 blink, 5 thinking, 6 happy,
-7 front view, 8 to 11 a four-frame walk cycle taken from a second source sheet,
-`tools/source/ducks2.png` (the first four poses of its third row). Frames 0 to 3 are one drawing family and 4 to 6 another, with slightly different
+7 front view, 8 to 11 a four-frame walk cycle from `tools/source/walk2.png`, 12 carried and
+13 landing from `tools/source/ducks2.png`. Frames 0 to 3 are one drawing family and 4 to 6 another, with slightly different
 body shapes. The default idle and thinking sequences therefore use only 4 and 5, and walk uses 8
 to 11, and squeak 2 and 0. Going from idle to walk still changes family, and the duck's outline
 shifts slightly when it does; this is accepted for the preset art. Frames 6 and 7 are not used
@@ -1066,3 +1066,10 @@ Each of these differs from revision 3 as approved.
     palette. Both new animations appear in the Animations panel and the GIF list.
   - `upgradeWalk` is now `upgradeDuck` and also gives a preset-built saved duck the two
     frames, the two colours and the two animations.
+- **Walk cycle replaced (2026-10-09).** The user supplied a dedicated four-pose walk sheet,
+  `tools/source/walk2.png`, drawn at about 8 source pixels per art pixel, which fits the
+  canvas without resampling. It replaces the cycle taken from `ducks2.png`; that sheet now
+  supplies only the carried and landing poses. An earlier candidate sheet was 33 by 38 art
+  pixels, too large for the canvas, and was not used. `upgradeDuck` recognises the replaced
+  cycle's four frames by hash and swaps them, so a walk someone has redrawn is left alone.
+  The pipeline's later sheets are listed in `EXTRA_SHEETS`.

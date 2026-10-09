@@ -1,5 +1,5 @@
 # sprite_pipeline.py
-# Authoring-time converter: tools/source/ducks.png and ducks2.png -> data/presets.js
+# Authoring-time converter: tools/source/*.png -> data/presets.js
 # Adapted from campus_school/sprite_tools_new.py (background detection, mask,
 # flood-fill labelling). The site never runs this.
 
@@ -17,13 +17,17 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 SOURCE = os.path.join(HERE, "source", "ducks.png")
-# A second, smaller sheet (32 poses). Its walk cycle and two reaction poses are used.
-SOURCE_2 = os.path.join(HERE, "source", "ducks2.png")
-SOURCE_2_POSES = 32
-SOURCE_2_PITCH = (2.8, 3.8)
-# (pose in reading order, name, may add palette colours)
-SOURCE_2_USED = [(16, "walk 1", False), (17, "walk 2", False), (18, "walk 3", False),
-                 (19, "walk 4", False), (21, "carried", False), (29, "landing", True)]
+# Later sheets, in the order their poses become frames 8 onwards:
+# (file, poses on the sheet, source pixels per art pixel,
+#  [(pose in reading order, name, may add palette colours)])
+EXTRA_SHEETS = [
+    # The four-frame walk cycle.
+    ("walk2.png", 4, (7.5, 9.2),
+     [(0, "walk 1", False), (1, "walk 2", False), (2, "walk 3", False), (3, "walk 4", False)]),
+    # A sheet of 32 small poses; two reactions are used.
+    ("ducks2.png", 32, (2.8, 3.8),
+     [(21, "carried", False), (29, "landing", True)]),
+]
 OUT_JS = os.path.join(ROOT, "data", "presets.js")
 OUT_DIR = os.path.join(HERE, "out")
 OUT_SHEET = os.path.join(OUT_DIR, "contact_sheet.png")
@@ -385,63 +389,64 @@ def main():
             fail(f"{name} leaves no motion margin: {box}")
         frames.append(canvas)
 
-    # Poses from the second sheet. They use the palette and the anchor already
+    # Poses from the later sheets. They use the palette and the anchor already
     # fixed above, so frames 0 to 7 do not change when they are added. A pose may
     # add colours (the splash is blue); those go after the existing slots.
     def slot_2(colour, may_add):
         d = [np.linalg.norm(np.array(colour) - np.array(c)) for c in centres]
         if may_add and is_water(colour) and min(d) > MERGE_DISTANCE:
             centres.append(colour)
-            print(f"  [PALETTE] slot {len(centres)}: {hex_of(colour)} added for the second sheet")
+            print(f"  [PALETTE] slot {len(centres)}: {hex_of(colour)} added by a later sheet")
             return len(centres)
         return int(np.argmin(d)) + 1
 
     global PITCH_RANGE
     brown_slots = [i + 1 for i, c in enumerate(centres) if is_brown(c) and i + 1 not in body_slots]
     shade_slot = min(body_slots, key=lambda k: luma(centres[k - 1]))
-    rgb2 = np.array(Image.open(SOURCE_2).convert("RGB"))
-    mask2 = background_mask(rgb2, detect_background(rgb2))
-    boxes2 = [b for b in components(~mask2) if b[3] - b[1] > 40]   # drops loose specks
-    if len(boxes2) != SOURCE_2_POSES:
-        fail(f"second sheet: expected {SOURCE_2_POSES} poses, found {len(boxes2)}")
-    boxes2 = reading_order(boxes2)
-    first_pitch, PITCH_RANGE = PITCH_RANGE, SOURCE_2_PITCH
-    for i, label, may_add in SOURCE_2_USED:
-        x0, y0, x1, y1 = boxes2[i]
-        pad = 4
-        ya, yb = max(0, y0 - pad), min(rgb2.shape[0], y1 + pad)
-        xa, xb = max(0, x0 - pad), min(rgb2.shape[1], x1 + pad)
-        cells, pitch = sample_cells(rgb2[ya:yb, xa:xb], mask2[ya:yb, xa:xb])
-        pose = [[0 if c is None else slot_2(c, may_add) for c in row] for row in trim(cells)]
-        belly, feet, centre = anchor_info(pose, body_slots, min_cells=6)
-        # This sheet draws the wing lines in brown, which shows on a recoloured
-        # duck. Above the belly, brown that is not next to the beak becomes shade.
-        arr = np.array(pose)
-        beak = np.isin(arr, [i + 1 for i, c in enumerate(centres) if not is_body(c) and not is_brown(c) and luma(c) >= OUTLINE_LUMA])
-        near_beak = np.zeros_like(beak)
-        for dy in (-1, 0, 1):
-            for dx in (-1, 0, 1):
-                near_beak |= np.roll(np.roll(beak, dy, axis=0), dx, axis=1)
-        wing = np.isin(arr, brown_slots) & ~near_beak
-        if not label.startswith("walk"):
-            # No legs here: brown under the belly is the bottom outline.
-            under = wing.copy()
-            under[:belly + 1] = False
-            arr[under] = max(range(len(centres)), key=lambda k: -luma(centres[k])) + 1
-        wing[belly + 1:] = False
-        arr[wing] = shade_slot
-        pose = arr.tolist()
-        # A stride with long legs stands on the bottom row and lifts the body a row.
-        lift = max(0, feet - (SIZE - 1 - belly_row))
-        canvas, box = place(pose, belly, centre, belly_row - lift, centre_col)
-        if canvas is None:
-            fail(f"{label} does not fit the {SIZE}x{SIZE} canvas: {box} (feet {feet})")
-        print(f"  [PLACE] {label}: pitch {pitch[0]:.2f} x {pitch[1]:.2f}, "
-              f"columns {box[0]}-{box[2] - 1}, rows {box[1]}-{box[3] - 1}")
-        if box[0] < 1 or box[2] - 1 > 30 or box[1] < 2:
-            fail(f"{label} leaves no motion margin: {box}")
-        frames.append(canvas)
-    PITCH_RANGE = first_pitch
+    for sheet, expected, pitch_range, used in EXTRA_SHEETS:
+        rgb2 = np.array(Image.open(os.path.join(HERE, "source", sheet)).convert("RGB"))
+        mask2 = background_mask(rgb2, detect_background(rgb2))
+        boxes2 = [b for b in components(~mask2) if b[3] - b[1] > 40]   # drops loose specks
+        if len(boxes2) != expected:
+            fail(f"{sheet}: expected {expected} poses, found {len(boxes2)}")
+        boxes2 = reading_order(boxes2)
+        first_pitch, PITCH_RANGE = PITCH_RANGE, pitch_range
+        for i, label, may_add in used:
+            x0, y0, x1, y1 = boxes2[i]
+            pad = 4
+            ya, yb = max(0, y0 - pad), min(rgb2.shape[0], y1 + pad)
+            xa, xb = max(0, x0 - pad), min(rgb2.shape[1], x1 + pad)
+            cells, pitch = sample_cells(rgb2[ya:yb, xa:xb], mask2[ya:yb, xa:xb])
+            pose = [[0 if c is None else slot_2(c, may_add) for c in row] for row in trim(cells)]
+            belly, feet, centre = anchor_info(pose, body_slots, min_cells=6)
+            # These sheets draw the wing lines in brown, which shows on a recoloured
+            # duck. Above the belly, brown that is not next to the beak becomes shade.
+            arr = np.array(pose)
+            beak = np.isin(arr, [i + 1 for i, c in enumerate(centres) if not is_body(c) and not is_brown(c) and luma(c) >= OUTLINE_LUMA])
+            near_beak = np.zeros_like(beak)
+            for dy in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    near_beak |= np.roll(np.roll(beak, dy, axis=0), dx, axis=1)
+            wing = np.isin(arr, brown_slots) & ~near_beak
+            if not label.startswith("walk"):
+                # No legs here: brown under the belly is the bottom outline.
+                under = wing.copy()
+                under[:belly + 1] = False
+                arr[under] = max(range(len(centres)), key=lambda k: -luma(centres[k])) + 1
+            wing[belly + 1:] = False
+            arr[wing] = shade_slot
+            pose = arr.tolist()
+            # A stride with long legs stands on the bottom row and lifts the body a row.
+            lift = max(0, feet - (SIZE - 1 - belly_row))
+            canvas, box = place(pose, belly, centre, belly_row - lift, centre_col)
+            if canvas is None:
+                fail(f"{label} does not fit the {SIZE}x{SIZE} canvas: {box} (feet {feet})")
+            print(f"  [PLACE] {label}: pitch {pitch[0]:.2f} x {pitch[1]:.2f}, "
+                  f"columns {box[0]}-{box[2] - 1}, rows {box[1]}-{box[3] - 1}")
+            if box[0] < 1 or box[2] - 1 > 30 or box[1] < 2:
+                fail(f"{label} leaves no motion margin: {box}")
+            frames.append(canvas)
+        PITCH_RANGE = first_pitch
 
     palettes = {"Classic": centres}
     for name, (light, dark) in RECOLOURS.items():

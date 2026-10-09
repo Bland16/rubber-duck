@@ -45,8 +45,16 @@ export function restore({ duck, backup }) {
 // duck still built on preset frames is touched.
 //  - Before the walk cycle (frames 8 to 11) existed, ducks walked on the standing
 //    pose and one stride, or on that stride and a made-up second one.
+//  - The first walk cycle was replaced; its four frames are recognised by hash.
 //  - Before the carried and landing poses (frames 12 and 13) existed, those two
 //    animations were filled in as copies of idle.
+const FIRST_WALK_CYCLE = [260288631, 3348737659, 4060367774, 3249513251];
+function hash(text) {
+  let h = 5381;
+  for (let i = 0; i < text.length; i += 1) h = ((h * 33) ^ text.charCodeAt(i)) >>> 0;
+  return h;
+}
+
 export function upgradeDuck(duck, presets) {
   if (!duck) return duck;
   const preset = presets[0]; // every preset has the same frames and animations
@@ -60,6 +68,13 @@ export function upgradeDuck(duck, presets) {
       frames: [...next.frames.slice(0, 8), ...preset.frames.slice(8, 12)],
       animations: { ...next.animations, walk: { ...preset.animations.walk } },
     };
+  }
+
+  // The first walk cycle, from a smaller sheet, was replaced by a cleaner one.
+  if (next.frames.length >= 12 && FIRST_WALK_CYCLE.every((h, i) => hash(next.frames[8 + i]) === h)) {
+    const frames = [...next.frames];
+    frames.splice(8, 4, ...preset.frames.slice(8, 12));
+    next = { ...next, frames };
   }
 
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
