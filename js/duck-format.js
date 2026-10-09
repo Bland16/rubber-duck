@@ -3,7 +3,7 @@
 export const VERSION = 1;
 export const SIZE = 32;
 export const FRAME_BYTES = SIZE * SIZE;
-export const MAX_FRAMES = 16;
+export const MAX_FRAMES = 20;
 export const MAX_COLOURS = 15;
 export const MAX_NAME = 24;
 export const MAX_SEQ = 8;

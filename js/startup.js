@@ -42,13 +42,18 @@ export function restore({ duck, backup }) {
 }
 
 // Brings a duck saved by an earlier version of the presets up to date. Only a
-// duck still built on preset frames is touched.
-//  - Before the walk cycle (frames 8 to 11) existed, ducks walked on the standing
-//    pose and one stride, or on that stride and a made-up second one.
-//  - The first walk cycle was replaced; its four frames are recognised by hash.
-//  - Before the carried and landing poses (frames 12 and 13) existed, those two
-//    animations were filled in as copies of idle.
-const FIRST_WALK_CYCLE = [260288631, 3348737659, 4060367774, 3249513251];
+// duck still built on preset frames is touched, one step at a time:
+//  1. Before any walk cycle existed, ducks walked on the standing pose and one
+//     stride, or on that stride and a made-up second one.
+//  2. Two earlier walk cycles were replaced; their frames are recognised by hash,
+//     so a walk someone has redrawn is left alone.
+//  3. Before the carried and landing poses (frames 12 and 13) existed, those two
+//     animations were filled in as copies of idle.
+//  4. The walk grew from four frames to six (frames 14 and 15).
+const OLD_WALK_CYCLES = [
+  [260288631, 3348737659, 4060367774, 3249513251],
+  [2727605289, 4206680096, 3116754440, 688719657],
+];
 function hash(text) {
   let h = 5381;
   for (let i = 0; i < text.length; i += 1) h = ((h * 33) ^ text.charCodeAt(i)) >>> 0;
@@ -59,6 +64,8 @@ export function upgradeDuck(duck, presets) {
   if (!duck) return duck;
   const preset = presets[0]; // every preset has the same frames and animations
   if (duck.frames[1] !== preset.frames[1]) return duck;
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const fourStep = { seq: [8, 9, 10, 11], fps: 8, motion: 'bob' };
   let next = duck;
 
   const walk = next.animations.walk.seq.join();
@@ -66,26 +73,34 @@ export function upgradeDuck(duck, presets) {
     next = {
       ...next,
       frames: [...next.frames.slice(0, 8), ...preset.frames.slice(8, 12)],
-      animations: { ...next.animations, walk: { ...preset.animations.walk } },
+      animations: { ...next.animations, walk: fourStep },
     };
   }
 
-  // The first walk cycle, from a smaller sheet, was replaced by a cleaner one.
-  if (next.frames.length >= 12 && FIRST_WALK_CYCLE.every((h, i) => hash(next.frames[8 + i]) === h)) {
+  if (next.frames.length >= 12
+    && OLD_WALK_CYCLES.some((cycle) => cycle.every((h, i) => hash(next.frames[8 + i]) === h))) {
     const frames = [...next.frames];
     frames.splice(8, 4, ...preset.frames.slice(8, 12));
     next = { ...next, frames };
   }
 
-  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   const old = preset.palette.length - 2; // the splash added two colours at the end
   if (next.frames.length === 12 && next.frames[8] === preset.frames[8] && next.palette.length === old
     && same(next.animations.carried, next.animations.idle) && same(next.animations.landing, next.animations.idle)) {
     next = {
       ...next,
       palette: [...next.palette, ...preset.palette.slice(old)],
-      frames: [...next.frames, ...preset.frames.slice(12)],
+      frames: [...next.frames, ...preset.frames.slice(12, 14)],
       animations: { ...next.animations, carried: { ...preset.animations.carried }, landing: { ...preset.animations.landing } },
+    };
+  }
+
+  if (next.frames.length === 14 && next.frames[8] === preset.frames[8] && next.frames[12] === preset.frames[12]
+    && same(next.animations.walk, fourStep)) {
+    next = {
+      ...next,
+      frames: [...next.frames, ...preset.frames.slice(14)],
+      animations: { ...next.animations, walk: { ...preset.animations.walk, seq: [...preset.animations.walk.seq] } },
     };
   }
   return next;

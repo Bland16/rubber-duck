@@ -18,15 +18,19 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 SOURCE = os.path.join(HERE, "source", "ducks.png")
 # Later sheets, in the order their poses become frames 8 onwards:
-# (file, poses on the sheet, source pixels per art pixel,
-#  [(pose in reading order, name, may add palette colours)])
+# (file, poses on the sheet, source pixels per art pixel, crop padding in source
+#  pixels, [(pose in reading order, name, may add palette colours)])
+# The walk cycle is the top row of walk3.png. Its last two poses come after the
+# reactions so that frames 12 and 13 keep their numbers.
 EXTRA_SHEETS = [
-    # The four-frame walk cycle.
-    ("walk2.png", 4, (7.5, 9.2),
+    # Twelve walking poses, packed closely: no padding, or a neighbour leaks in.
+    ("walk3.png", 12, (5.2, 6.8), 0,
      [(0, "walk 1", False), (1, "walk 2", False), (2, "walk 3", False), (3, "walk 4", False)]),
     # A sheet of 32 small poses; two reactions are used.
-    ("ducks2.png", 32, (2.8, 3.8),
+    ("ducks2.png", 32, (2.8, 3.8), 4,
      [(21, "carried", False), (29, "landing", True)]),
+    ("walk3.png", 12, (5.2, 6.8), 0,
+     [(4, "walk 5", False), (5, "walk 6", False)]),
 ]
 OUT_JS = os.path.join(ROOT, "data", "presets.js")
 OUT_DIR = os.path.join(HERE, "out")
@@ -55,7 +59,7 @@ RECOLOURS = {
 
 ANIMATIONS = {
     "idle": {"seq": [5, 5, 5, 4], "fps": 2, "motion": "none"},
-    "walk": {"seq": [8, 9, 10, 11], "fps": 8, "motion": "bob"},
+    "walk": {"seq": [8, 9, 10, 11, 14, 15], "fps": 10, "motion": "bob"},
     "squeak": {"seq": [2, 0], "fps": 6, "motion": "hop"},
     "sleep": {"seq": [3], "fps": 1, "motion": "bob"},
     "thinking": {"seq": [5], "fps": 4, "motion": "shake"},
@@ -403,7 +407,7 @@ def main():
     global PITCH_RANGE
     brown_slots = [i + 1 for i, c in enumerate(centres) if is_brown(c) and i + 1 not in body_slots]
     shade_slot = min(body_slots, key=lambda k: luma(centres[k - 1]))
-    for sheet, expected, pitch_range, used in EXTRA_SHEETS:
+    for sheet, expected, pitch_range, pad, used in EXTRA_SHEETS:
         rgb2 = np.array(Image.open(os.path.join(HERE, "source", sheet)).convert("RGB"))
         mask2 = background_mask(rgb2, detect_background(rgb2))
         boxes2 = [b for b in components(~mask2) if b[3] - b[1] > 40]   # drops loose specks
@@ -413,7 +417,6 @@ def main():
         first_pitch, PITCH_RANGE = PITCH_RANGE, pitch_range
         for i, label, may_add in used:
             x0, y0, x1, y1 = boxes2[i]
-            pad = 4
             ya, yb = max(0, y0 - pad), min(rgb2.shape[0], y1 + pad)
             xa, xb = max(0, x0 - pad), min(rgb2.shape[1], x1 + pad)
             cells, pitch = sample_cells(rgb2[ya:yb, xa:xb], mask2[ya:yb, xa:xb])

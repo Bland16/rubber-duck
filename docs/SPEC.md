@@ -135,7 +135,7 @@ binary form of it (section 5.3).
   "frames": ["<base64>"],
   "animations": {
     "idle":     { "seq": [5, 5, 5, 4], "fps": 2, "motion": "none"  },
-    "walk":     { "seq": [8, 9, 10, 11], "fps": 8, "motion": "bob" },
+    "walk":     { "seq": [8, 9, 10, 11, 14, 15], "fps": 10, "motion": "bob" },
     "squeak":   { "seq": [2, 0],       "fps": 6, "motion": "hop"   },
     "sleep":    { "seq": [3],          "fps": 1, "motion": "bob"   },
     "thinking": { "seq": [5],          "fps": 4, "motion": "shake" }
@@ -265,10 +265,10 @@ what it does and what it produced.
 classified as body) and `BELLY_ROW`.
 
 Frame order: 0 standing, 1 walking, 2 squeaking, 3 asleep, 4 blink, 5 thinking, 6 happy,
-7 front view, 8 to 11 a four-frame walk cycle from `tools/source/walk2.png`, 12 carried and
-13 landing from `tools/source/ducks2.png`. Frames 0 to 3 are one drawing family and 4 to 6 another, with slightly different
+7 front view, 8 to 11 and 14 to 15 a six-frame walk cycle from the top row of
+`tools/source/walk3.png`, 12 carried and 13 landing from `tools/source/ducks2.png`. Frames 0 to 3 are one drawing family and 4 to 6 another, with slightly different
 body shapes. The default idle and thinking sequences therefore use only 4 and 5, and walk uses 8
-to 11, and squeak 2 and 0. Going from idle to walk still changes family, and the duck's outline
+to 11 then 14 and 15, and squeak 2 and 0. Going from idle to walk still changes family, and the duck's outline
 shifts slightly when it does; this is accepted for the preset art. Frames 6 and 7 are not used
 by a default animation.
 
@@ -823,7 +823,7 @@ Each is demonstrated running before the next starts.
 - **duck-format**: a valid duck passes; for every row of the section 5 table, at least one
   input breaking it is rejected with the right reason; the reason order (a duck with a bad
   `v` and a bad name reports the version); nested unknown keys; a name is trimmed; encode then
-  decode returns a deeply equal duck for every preset and for a duck with 16 frames, 15
+  decode returns a deeply equal duck for every preset and for a duck with the most frames allowed, 15
   colours and a 24-character non-ASCII name; `too-long` and `corrupt` cases including
   truncated and trailing bytes; frame deletion remaps sequences as in 5.4; the Classic share
   link is at most 4,000 characters.
@@ -1073,3 +1073,10 @@ Each of these differs from revision 3 as approved.
   pixels, too large for the canvas, and was not used. `upgradeDuck` recognises the replaced
   cycle's four frames by hash and swaps them, so a walk someone has redrawn is left alone.
   The pipeline's later sheets are listed in `EXTRA_SHEETS`.
+- **Six-frame walk (2026-10-09).** The user supplied a twelve-pose walk sheet,
+  `tools/source/walk3.png`. Its top row is one full cycle and is now the walk: frames 8 to
+  11, then 14 and 15 (after the reactions, so frames 12 and 13 keep their numbers), at
+  10 fps. The bottom row is not used. `walk2.png` is no longer read. Presets now have 16
+  frames, so the frame limit went from 16 to 20 to leave room to add frames. `upgradeDuck`
+  swaps both earlier cycles by hash and adds the two frames to a duck still on the default
+  four-step walk.
