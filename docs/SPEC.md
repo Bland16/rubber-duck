@@ -371,7 +371,7 @@ word is in the slider's `aria-valuetext` and in the chips below, not beside the 
 | Slider | 0 to 30 | 35 to 65 | 70 to 100 | What it changes |
 |---|---|---|---|---|
 | Sass | Polite | Dry | Savage | Wording: mild below 50, spicy at 50 and above |
-| Energy | Sleepy | Steady | Zoomy | Walk speed, and how soon it walks or sleeps (section 10) |
+| Energy | Sleepy | Steady | Zoomy | How soon it walks or sleeps (section 10) |
 | Helpfulness | Cryptic | Fair | Mentor | How many hunches, and how specific (section 11) |
 | Chattiness | Quiet | Chatty | Never stops | How often it speaks unprompted (section 10) |
 | Code focus | Casual | Curious | Obsessed | Share of chatter that is about code; exactly 0 turns on buddy mode |
@@ -401,7 +401,7 @@ The panel shows the label, the five trait words as chips, and the badge when bud
 
 `personality.js` exports `traitWords(p)`, `label(p)`, `isBuddy(p)` and `behaviour(p)`, where
 `behaviour` returns the numbers used in section 10: `idlePauseMs = 4000 - 30 * energy`,
-`walkSpeed = 20 + energy` (px per second), `sleepAfterMs = 20000 + 400 * energy`,
+`walkSpeed = 20 + speed` (px per second), `sleepAfterMs = 20000 + 400 * energy`,
 `chatterEveryMs = 60000 - 500 * chattiness` or `null` when chattiness is 0, and
 `codeChatterChance = codeFocus / 100`.
 
@@ -1086,3 +1086,10 @@ Each of these differs from revision 3 as approved.
   frame, leaked from the neighbouring pose on the sheet, is removed: walk poses keep only
   their largest connected group of cells. `upgradeDuck` cleans that frame and drops the
   two extra frames from a saved duck unless an animation still uses them.
+- **Walking speed slider (2026-10-10, at the user's request).** A sixth slider, "Walking
+  speed", sets `personality.speed` (0 to 100 in steps of 5) and `walkSpeed = 20 + speed`.
+  Energy no longer sets the speed; it still sets how soon the duck walks and sleeps. Speed
+  is not a trait: it has no chip, is not on the share card and does not affect the label.
+  It is optional on the way in and defaults to the duck's energy, so older ducks walk as
+  they did; a validated duck always has it. In a link it is one byte after the carried and
+  landing animations.

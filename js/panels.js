@@ -1,7 +1,7 @@
 // The Personality and Export panels, and link copying.
 
 import { validateDuck, encodeDuck, LANGUAGES } from './duck-format.js';
-import { SLIDER_INFO, traitWords, label, isBuddy } from './personality.js';
+import { SLIDER_INFO, SPEED_INFO, traitWords, label, isBuddy, band } from './personality.js';
 import { isEdited } from './editor.js';
 import { showNotice, dismissNotice, confirmAction } from './notice.js';
 import { slug } from './export/slug.js';
@@ -48,7 +48,7 @@ export function createPersonalityPanel({ store }) {
   const roamEl = document.getElementById('roam');
   const inputs = {};
 
-  SLIDER_INFO.forEach((info) => {
+  [...SLIDER_INFO, SPEED_INFO].forEach((info) => {
     const id = `slider-${info.key}`;
     const input = Object.assign(document.createElement('input'), { type: 'range', id, min: '0', max: '100', step: '5' });
     const text = Object.assign(document.createElement('label'), { htmlFor: id, textContent: info.label });
@@ -81,6 +81,9 @@ export function createPersonalityPanel({ store }) {
       if (inputs[info.key].value !== value) inputs[info.key].value = value;
       inputs[info.key].setAttribute('aria-valuetext', `${value}, ${words[index]}`);
     });
+    const speed = duck.personality.speed;
+    if (inputs.speed.value !== String(speed)) inputs.speed.value = String(speed);
+    inputs.speed.setAttribute('aria-valuetext', `${speed}, ${SPEED_INFO.words[band(speed)]}`);
     renderTraits(duck, document.getElementById('personality-label'),
       document.getElementById('trait-chips'), document.getElementById('buddy-badge'));
     const buddy = isBuddy(duck.personality);

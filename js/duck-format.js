@@ -13,6 +13,8 @@ export const ANIMATION_NAMES = ['idle', 'walk', 'squeak', 'sleep', 'thinking', '
 export const CORE_ANIMATIONS = 5;
 export const MOTIONS = ['none', 'bob', 'hop', 'shake'];
 export const SLIDERS = ['sass', 'energy', 'helpfulness', 'chattiness', 'codeFocus'];
+// Added later: walking speed. A duck without it walks at its energy, as it used to.
+export const SPEED = 'speed';
 export const LANGUAGES = ['java', 'javascript', 'python', 'c'];
 export const ROAMS = ['strip', 'page', 'sit', 'path']; // new values go at the end: links store the index
 export const MAX_PAYLOAD = 20000;
@@ -65,7 +67,7 @@ export function validateDuck(value) {
     const entries = Object.values(value.animations);
     if (entries.some((a) => isObject(a) && hasUnknown(a, ANIMATION_KEYS))) return no('unknown-key');
   }
-  if (isObject(value.personality) && hasUnknown(value.personality, SLIDERS)) return no('unknown-key');
+  if (isObject(value.personality) && hasUnknown(value.personality, [...SLIDERS, SPEED])) return no('unknown-key');
 
   if (typeof value.name !== 'string') return no('name');
   const name = value.name.trim();
@@ -92,6 +94,8 @@ export function validateDuck(value) {
 
   if (!isObject(personality)
     || !SLIDERS.every((k) => isInt(personality[k], 0, 100) && personality[k] % 5 === 0)) return no('personality');
+  const speed = personality[SPEED] === undefined ? personality.energy : personality[SPEED];
+  if (!isInt(speed, 0, 100) || speed % 5 !== 0) return no('personality');
 
   if (!Array.isArray(languages) || new Set(languages).size !== languages.length
     || !languages.every((l) => LANGUAGES.includes(l))) return no('languages');
@@ -103,6 +107,7 @@ export function validateDuck(value) {
     duck.animations[key] = { seq: [...filled[key].seq], fps: filled[key].fps, motion: filled[key].motion };
   }
   for (const key of SLIDERS) duck.personality[key] = personality[key];
+  duck.personality[SPEED] = speed;
   return { ok: true, duck };
 }
 
@@ -141,6 +146,7 @@ export function packDuck(duck) {
   out.push(LANGUAGES.reduce((mask, l, bit) => mask | (duck.languages.includes(l) ? 1 << bit : 0), 0));
   out.push(ROAMS.indexOf(duck.roam));
   ANIMATION_NAMES.slice(CORE_ANIMATIONS).forEach(animation); // later additions go last
+  out.push(duck.personality[SPEED] ?? duck.personality.energy);
   return Uint8Array.from(out);
 }
 
@@ -179,6 +185,7 @@ export function unpackDuck(bytes) {
   duck.languages = LANGUAGES.filter((_, bit) => mask & (1 << bit));
   duck.roam = ROAMS[take()];
   if (pos < bytes.length) ANIMATION_NAMES.slice(CORE_ANIMATIONS).forEach(animation);
+  if (pos < bytes.length) duck.personality[SPEED] = take();
   if (pos !== bytes.length) throw new Error('trailing');
   return duck;
 }

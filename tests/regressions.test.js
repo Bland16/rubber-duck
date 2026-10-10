@@ -128,3 +128,23 @@ test('the walking modes survive a share link, and old links keep their meaning',
     assert.equal(result.ok && result.duck.roam, roam);
   }
 });
+
+test('walking speed is its own slider and defaults to energy for older ducks', async () => {
+  const { validateDuck, encodeDuck, decodeDuck, packDuck, unpackDuck } = await import('../js/duck-format.js');
+  const { behaviour } = await import('../js/personality.js');
+  const { PRESETS } = await import('../data/presets.js');
+  const old = structuredClone(PRESETS[0]);
+  old.personality = { sass: 50, energy: 80, helpfulness: 50, chattiness: 50, codeFocus: 50 };
+  assert.equal(validateDuck(old).duck.personality.speed, 80);
+  assert.equal(behaviour(old.personality).walkSpeed, 100); // as before the slider existed
+  // A link made before the slider: the same bytes without the last one.
+  const bytes = packDuck(validateDuck(old).duck);
+  assert.equal(validateDuck(unpackDuck(bytes.subarray(0, bytes.length - 1))).duck.personality.speed, 80);
+  const fast = { ...PRESETS[0], personality: { ...PRESETS[0].personality, energy: 10, speed: 95 } };
+  assert.equal(behaviour(fast.personality).walkSpeed, 115);
+  assert.equal(behaviour(fast.personality).idlePauseMs, 4000 - 30 * 10);
+  assert.equal((await decodeDuck(await encodeDuck(fast))).duck.personality.speed, 95);
+  for (const bad of [101, 7, -5, '50']) {
+    assert.equal(validateDuck({ ...fast, personality: { ...fast.personality, speed: bad } }).reason, 'personality');
+  }
+});

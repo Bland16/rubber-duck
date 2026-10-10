@@ -110,7 +110,7 @@ test('a full-size duck survives encode then decode', async () => {
   duck.palette = Array.from({ length: 15 }, (_, i) => `#${(i * 17).toString(16).padStart(2, '0')}80ff`);
   duck.frames = Array.from({ length: MAX_FRAMES }, (_, i) => frameOf(i % 16));
   duck.animations.walk.seq = [MAX_FRAMES - 1, 0, 7, 3, 15, 1, 2, 8];
-  duck.personality = { sass: 0, energy: 100, helpfulness: 5, chattiness: 95, codeFocus: 0 };
+  duck.personality = { sass: 0, energy: 100, helpfulness: 5, chattiness: 95, codeFocus: 0, speed: 35 };
   duck.languages = ['java', 'javascript', 'python', 'c'];
   duck.roam = 'page';
   assert.equal(validateDuck(duck).ok, true);

@@ -8,6 +8,10 @@ export const SLIDER_INFO = [
   { key: 'codeFocus', label: 'Code focus', words: ['Casual', 'Curious', 'Obsessed'] },
 ];
 
+// Walking speed has its own slider. It is not a trait: it has no chip and does
+// not affect the personality label.
+export const SPEED_INFO = { key: 'speed', label: 'Walking speed', words: ['Slow', 'Medium', 'Fast'] };
+
 // Centres are (sass, energy, helpfulness, chattiness). Earlier rows win ties.
 export const PERSONALITIES = [
   { voice: 'senior', label: 'Senior Engineer', centre: [70, 20, 70, 50] },
@@ -54,7 +58,7 @@ export function sassLevel(p) {
 export function behaviour(p) {
   return {
     idlePauseMs: 4000 - 30 * p.energy,
-    walkSpeed: 20 + p.energy,
+    walkSpeed: 20 + (p.speed === undefined ? p.energy : p.speed),
     sleepAfterMs: 20000 + 400 * p.energy,
     chatterEveryMs: p.chattiness === 0 ? null : 60000 - 500 * p.chattiness,
     codeChatterChance: p.codeFocus / 100,

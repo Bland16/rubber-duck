@@ -98,7 +98,8 @@ export const PRESETS = [
       "energy": 50,
       "helpfulness": 50,
       "chattiness": 50,
-      "codeFocus": 50
+      "codeFocus": 50,
+      "speed": 50
     },
     "languages": [],
     "roam": "strip"
@@ -199,7 +200,8 @@ export const PRESETS = [
       "energy": 50,
       "helpfulness": 50,
       "chattiness": 50,
-      "codeFocus": 50
+      "codeFocus": 50,
+      "speed": 50
     },
     "languages": [],
     "roam": "strip"
@@ -300,7 +302,8 @@ export const PRESETS = [
       "energy": 50,
       "helpfulness": 50,
       "chattiness": 50,
-      "codeFocus": 50
+      "codeFocus": 50,
+      "speed": 50
     },
     "languages": [],
     "roam": "strip"
@@ -401,7 +404,8 @@ export const PRESETS = [
       "energy": 50,
       "helpfulness": 50,
       "chattiness": 50,
-      "codeFocus": 50
+      "codeFocus": 50,
+      "speed": 50
     },
     "languages": [],
     "roam": "strip"
