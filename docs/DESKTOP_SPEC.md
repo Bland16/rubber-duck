@@ -1,6 +1,9 @@
 # Build-a-Duck desktop duck: specification
 
-Revision 3, 2026-10-12. Not yet approved. Revisions 1 and 2 were each audited by a fresh
+Revision 3, 2026-10-12. Approved by the user on 2026-10-12 ("Looks good"). Section 17 lists
+what changed during the build.
+
+Earlier status: Revisions 1 and 2 were each audited by a fresh
 reviewer; this revision answers the second audit and has not itself been audited. Section 3
 separates what the user has accepted from what still needs their word.
 
@@ -599,8 +602,8 @@ any differs from the committed copy.
 - `test_syntax_corpus`: the web corpus with its `.expect.json` sidecars through
   `check_code` with the parser on, judged exactly as `tests/corpus.test.js` judges (kind,
   and line within 1). Java and C/C++: the same pass and catch lists as the page. JavaScript:
-  the lists recorded in `parity.json` for `useParser: false`; a valid file must give
-  `unsure` true and no findings. Python: every valid file has no finding and every broken
+  the lists recorded in `parity.json` for `useParser: false`, and the `unsure` value
+  recorded there. Python: every valid file has no finding and every broken
   file is caught as its sidecar says.
 - `test_python_parse`: each P6 branch; a file Python accepts that R5 flags keeps its R5
   finding; the fragments `return x + 1`, an indented function body, an indented body whose
@@ -710,3 +713,25 @@ The audit of the web page that accepted decision 8 puts first was done on 2026-1
 - **Two implementations of one checker** can drift. The parity file and the freshness test
   are the guard.
 - **JavaScript is checked less well here than on the page** (section 3.2 F).
+
+## 17. Changes made during the build
+
+- **`selftest.py`** is a file of its own in `desktop/buildaduck/`, not part of `app.py`.
+- **`startup.choose_duck(args, config, load, classic)`** takes the Classic duck as a fourth
+  argument, so it stays pure.
+- **`DuckBrain`** takes two more optional arguments: `ui` (the display scaling, for the drag
+  threshold and the corner inset) and `check` (the code checker, so tests can supply one). It
+  also has `ask_for_paste_box()`, called by the menu, and the read-only fields `shown`
+  (frame and offset to draw), `dragging`, and `has_next` inside `bubble`.
+- **Section 13's corpus test for JavaScript** said a valid file must give `unsure` true. That
+  was a leftover from revision 2; the port returns what the JavaScript returns (false), and
+  the "lightly" sentence carries the caveat instead.
+- **A leading U+FEFF** is removed only from the text handed to Python's parser. The ported
+  heuristics see the text as pasted, so they stay identical to the JavaScript.
+- **A lone surrogate** in pasted Python makes P6 unavailable (Python raises a `ValueError`),
+  like the other cases in that branch.
+- **The loader** also exposes `read_data`, `read_json` (packaged data), `parse_json` and
+  `load_duck_text`, used by start-up and the tests.
+- **The spikes** (section 15, step 1) passed on the build machine: both windows take clicks
+  only on drawn pixels, and a `.pyzw` opened through Windows' file association starts under
+  `pythonw.exe`. Dropping a file onto it was not simulated; the drop handler is registered.

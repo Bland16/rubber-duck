@@ -174,6 +174,13 @@ input[type="number"] { width: 5rem; }
 .duck-controls .controls-toggle { min-width: 40px; min-height: 40px; padding: 0; font-size: 1.375rem; line-height: 1; }
 
 #roam label { display: flex; }
+.take-home { margin-top: var(--space-3); }
+.take-home summary { cursor: pointer; font-weight: bold; min-height: 32px; display: flex; align-items: center; }
+.take-home summary::before { content: "+"; margin-right: var(--space-2); }
+.take-home[open] summary::before { content: "\2212"; }
+.take-home ol { padding-left: var(--space-5); }
+.take-home li { margin-bottom: var(--space-1); }
+.take-home code { overflow-wrap: anywhere; }
 .hint { color: var(--ink-soft); font-size: 0.875rem; margin: var(--space-1) 0 0; }
 .path-overlay { position: fixed; inset: 0; width: 100vw; height: 100vh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: rgba(0, 0, 0, 0.45); cursor: crosshair; touch-action: none; }
 .path-overlay::backdrop { background: transparent; }
