@@ -1,37 +1,30 @@
-# LinkedIn post draft
+# LinkedIn post
 
-Attach `docs/demo.mp4` as a native video so it autoplays in the feed. Put the link in the post
-text. Before posting, run the link through LinkedIn's Post Inspector to check the preview card.
-
----
-
-I built a rubber duck that judges your code.
-
-Rubber duck debugging is the old trick of explaining your bug out loud to a rubber duck until
-you spot it yourself. I wanted a duck that talks back.
-
-Build-a-Duck lets you:
-
-- draw your own pixel duck, or recolour one of mine
-- set its personality with five sliders (mine came out a Goth Duck: high sass, few words)
-- paste in Java, JavaScript, Python or C/C++ and get its "hunches" about missing semicolons,
-  unbalanced brackets and the classic = instead of ==
-- export it as a sprite sheet, a GIF, or a share card
-
-There is no AI in it and no server. The syntax check is plain JavaScript that runs in your
-browser, so the code you paste never leaves your machine. The duck is honest about its limits:
-when it isn't sure, it says so.
-
-Not a coder? Turn "Code focus" down to zero and it becomes a buddy who just keeps you company.
-
-Make one and show me your duck: https://bland16.github.io/rubber-duck/
-
-(Best on a laptop. On a phone you can meet the duck, but the maker needs a bigger screen.)
-
-#rubberduckdebugging #webdev #javascript #pixelart #sideproject
+Sarah's final wording (2026-10-12). Attach `docs/demo.mp4` or a GIF exported from the page.
 
 ---
 
-Alternative opening line:
+Do you remember real coding?
 
-My debugging partner is 32 pixels wide and has opinions about my semicolons.
+Typing the words, checking the syntax, and chatting with your trusted rubber duck?
+
+I do. And I miss it. So, I made a rubber duck to keep me company. The duck itself uses no AI and makes no API calls: just plain JavaScript and Python and a pile of hand-written rules. Whether you're practicing fundamentals, working on a project you want to keep AI-free, or just want a small friend wandering across your screen, this duck is here for you.
+
+Introducing:
+
+The Rubber Duck to End All Rubber Ducks
+
+Feel free to try it out at https://bland16.github.io/rubber-duck/
+
+The code lives at https://github.com/Bland16/rubber-duck, if anyone wants to make their own versions.
+
+This was just a fun program I made to test a Claude workflow that I decided to open source for the good people of LinkedIn. Thank you to my fellow TAs for giving me this idea while cleaning up post-class.
+
+---
+
+## Before posting
+
+- Both links only work after the site is deployed.
+- Run the page link through LinkedIn's Post Inspector so the preview image shows.
+- The last paragraph reads as the Claude workflow being open source. The repository holds the
+  duck, not the workflow file; link the workflow too if that is what is meant.

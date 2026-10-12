@@ -167,6 +167,9 @@ test('R7: a JavaScript semicolon hunch needs a habit or a joined line', () => {
   assert.deepEqual(semis('function f() {\n  return\n  (1 + 2)\n}'), []);
   assert.deepEqual(semis('if (ready)\n  (async () => {})()'), []);
   assert.deepEqual(semis('const a = 1\n;[1, 2].forEach(log)'), []);
+  assert.deepEqual(semis('export default\n[1, 2]'), []);
+  assert.deepEqual(semis('while (go) {\n  break\n  (x)\n}'), []);
+  assert.deepEqual(semis('for (const x of xs) {\n  continue\n  [x]\n}'), []);
   assert.deepEqual(semis('const total = add(\n  1,\n  2\n)\nlog(total)'), []);
 
   // Quiet when the code is broken in a way that makes line endings unreliable.

@@ -244,6 +244,33 @@ class Dragging(unittest.TestCase):
         rig.release()
         self.assertEqual(rig.brain.state, "falling")
 
+    def test_a_click_during_the_fall_finishes_the_fall(self):
+        rig = Rig()
+        ground = rig.brain.y
+        rig.drag_to(500, 100)
+        rig.release()
+        rig.run(100)
+        rig.click()
+        self.assertEqual(rig.brain.y, ground)
+        self.assertEqual(rig.brain.state, "squeaking")
+
+    def test_a_dragged_sitting_place_is_forgotten_when_the_screen_changes(self):
+        rig = Rig(roam="sit", energy=100, speed=100)
+        rig.drag_to(800, 600)
+        rig.release()
+        rig.run(2000)
+        rig.brain.set_bounds((0, 0, 500, 400))
+        rig.run(60000)
+        self.assertEqual((rig.brain.x, rig.brain.y), (500 - rig.brain.side - 16, 16))
+
+    def test_the_double_click_gap_can_be_set(self):
+        rig = Rig()
+        rig.brain._double_click_ms = 200
+        rig.click()
+        rig.now += 300
+        rig.click()
+        self.assertIsNone(rig.brain.bubble["action"])   # too slow: a second squeak, not the prompt
+
     def test_the_drag_stays_inside_the_bounds(self):
         rig = Rig()
         rig.drag_to(-500, -500)
@@ -375,6 +402,18 @@ class PasteBox(unittest.TestCase):
         took = rig.run(5000, until=lambda b: b.bubble is not None)
         self.assertTrue(THINKING_MS <= took <= THINKING_MS + 2 * TICK, took)
         self.assertEqual(rig.brain.state, "talking")
+
+    def test_a_click_while_thinking_does_not_lose_the_answer(self):
+        rig = Rig(check=lambda text, language: self.RESULT)
+        rig.brain.on_paste_opened()
+        rig.brain.on_paste_closed("int x = 1", "java")
+        rig.now += 200
+        rig.click()                      # squeaks, with a chatter line in the bubble
+        chatter = rig.brain.bubble["text"]
+        rig.run(THINKING_MS + 200)
+        self.assertIsNotNone(rig.brain.bubble)
+        self.assertNotEqual(rig.brain.bubble["text"], chatter)
+        self.assertIn("1", rig.brain.bubble["text"])   # the semicolon hunch for line 1
 
     def test_cancel_does_nothing(self):
         rig = Rig(check=lambda text, language: self.RESULT)

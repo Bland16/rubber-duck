@@ -76,6 +76,8 @@ js/store.js             the current duck and the undo history (pure)
 js/sprite-render.js     draws a frame or a sheet to a canvas at an integer scale
 js/editor.js            pixel editor, frame strip, animation panel
 js/path-draw.js         the draw-a-path dialog and its pure helpers
+desktop/                the desktop duck, a Python program; see docs/DESKTOP_SPEC.md
+tools/export_desktop.mjs  writes the files the desktop duck shares with the page
 js/personality.js       sliders -> trait words, label, buddy mode, behaviour numbers (pure)
 js/syntax/common.js     shared scanner
 js/syntax/javascript.js
@@ -1163,3 +1165,15 @@ Each of these differs from revision 3 as approved.
   semicolons removed from that code, 372 were found, none on the wrong line. Corpus
   additions (written by the builder, not independently): four broken files
   `semicolon_01` to `04` and two valid files, `task_queue.js` and `summary.js`.
+- **The desktop duck (2026-10-12).** A duck that lives on the Windows desktop, which section
+  2 lists as out of scope, was added at the user's request as a separate program with its
+  own spec, `docs/DESKTOP_SPEC.md`. What it changes in the page:
+  - The Export panel ends with a closed `<details class="take-home">` block, "Take your duck
+    home (Windows)": five steps, a download link to `desktop/build-a-duck.pyzw`, and a link
+    to the source. It is in the maker only.
+  - `tools/export_desktop.mjs` writes the response pool, the Classic duck and a file of
+    expected values for the Python ports; `tests/desktop-export.test.js` (part of
+    `npm test`) fails when they are out of date. `tests/desktop-page.check.mjs` is a browser
+    check of the block, run by hand.
+  - R7's joined-line test also ignores a line ending in `default`, `break` or `continue`.
+  - A click on a falling duck puts it on the ground before it squeaks.

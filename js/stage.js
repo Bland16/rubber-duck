@@ -357,6 +357,10 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
   }
 
   function doSqueak() {
+    if (state === 'falling') {
+      position.y = bounds().groundY; // finish the fall; the squeak takes over the state
+      place();
+    }
     if (!prefs.muted) squeak();
     enter('squeaking');
     say([chatterLine()]);

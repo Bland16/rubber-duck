@@ -20,7 +20,8 @@ from .personality import is_buddy
 from .syntax import LANGUAGE_ORDER, guess_language
 
 TITLE = "Build-a-Duck"
-KEY_COLOURS = ("#ff00fe", "#00ff01", "#0100ff")
+# One more candidate than a palette can hold, so one is always free.
+KEY_COLOURS = tuple(f"#ff{value:02x}fe" for value in range(16))
 LANGUAGE_LABELS = {"java": "Java", "javascript": "JavaScript", "python": "Python", "c": "C/C++"}
 SIZES = ("small", "medium", "large")
 TICK_MS = 33
@@ -75,6 +76,8 @@ class DuckApp:
         self.bubble_canvas = None
         self.bubble_shown = None         # what the bubble window currently shows
         self.bubble_layout = None        # sizes measured for the page now showing
+        self.bubble_buttons = {}         # label -> centre of the button on the bubble canvas
+        self.menu = None
         self.bubble_place = None
         self.paste_window = None
         self.images = {}
@@ -89,7 +92,8 @@ class DuckApp:
         self.bounds = win.work_area() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
         self.bounds_checked = time.monotonic()
         self.brain = DuckBrain(duck, pool, self.bounds, self.scale,
-                               lambda: time.monotonic() * 1000, random.random, ui=self.ui)
+                               lambda: time.monotonic() * 1000, random.random, ui=self.ui,
+                               double_click_ms=win.double_click_ms())
         self.brain.set_muted(self.settings["muted"])
         self.brain.set_paused(self.settings["paused"])
         self._rebuild_images()
@@ -228,8 +232,10 @@ class DuckApp:
             if count_text:
                 canvas.create_text(b + pad, row_y + button_h // 2, text=count_text, font=small_font, anchor="w", fill="#111111")
             x = box_w - b - pad
-            for (label, handler), width in reversed(list(zip(buttons, button_ws))):
-                tag = f"button-{label}"
+            self.bubble_buttons = {}
+            for number, ((label, handler), width) in enumerate(reversed(list(zip(buttons, button_ws)))):
+                tag = f"button-{number}"   # a tag with a space in it would be read as two tags
+                self.bubble_buttons[label] = (x - width // 2, row_y + button_h // 2)
                 canvas.create_rectangle(x - width, row_y, x, row_y + button_h, fill=white, outline=black, width=max(1, self.px(2)), tags=tag)
                 canvas.create_text(x - width // 2, row_y + button_h // 2, text=label, font=small_font, fill="#111111", tags=tag)
                 canvas.tag_bind(tag, "<Button-1>", lambda _event, run=handler: run())
@@ -239,6 +245,15 @@ class DuckApp:
         if place != self.bubble_place:
             self.bubble_window.geometry(f"{place[2]}x{place[3]}+{place[0]}+{place[1]}")
             self.bubble_place = place
+
+    def press_bubble_button(self, label):
+        """Clicks one of the bubble's buttons through the canvas, as the mouse would."""
+        x, y = self.bubble_buttons[label]
+        self.bubble_canvas.event_generate("<Motion>", x=x, y=y)
+        self.bubble_canvas.event_generate("<Button-1>", x=x, y=y)
+        if self.bubble_canvas is not None:   # the press may have closed the bubble
+            self.bubble_canvas.event_generate("<ButtonRelease-1>", x=x, y=y)
+        self.root.update()
 
     def on_bubble_next(self):
         self.brain.on_bubble_next()
@@ -281,7 +296,9 @@ class DuckApp:
     # ── Menu ─────────────────────────────────────────────────────────────────
 
     def build_menu(self):
-        menu = tk.Menu(self.root, tearoff=0)
+        if self.menu is not None:
+            self.menu.destroy()   # also destroys its submenu
+        menu = self.menu = tk.Menu(self.root, tearoff=0)
         if not is_buddy(self.duck["personality"]):
             menu.add_command(label="Paste code...", command=self.menu_paste)
         self.mute_var = tk.BooleanVar(value=self.settings["muted"])
@@ -342,13 +359,13 @@ class DuckApp:
         if status != "ok":
             self.show_message(MESSAGES[value])
             return False
+        if self.paste_window is not None:
+            self.close_paste_box(None)   # its language list belongs to the duck being replaced
         self.duck = value
         self.brain.set_duck(value)
         self._rebuild_images()
         self.settings["duckPath"] = os.path.abspath(path)
         self.save_settings()
-        if self.paste_window is not None:
-            self.close_paste_box(None)
         self.draw()
         return True
 
@@ -378,7 +395,7 @@ class DuckApp:
         window.title(f"Paste code for {self.duck['name'] or 'Duck'}")
         window.wm_attributes("-topmost", True)
         window.protocol("WM_DELETE_WINDOW", lambda: self.close_paste_box(None))
-        offered = self.offered_languages()
+        offered = self.paste_offered = self.offered_languages()
         self.paste_language_touched = False
 
         top = ttk.Frame(window, padding=self.px(10))
@@ -403,8 +420,10 @@ class DuckApp:
         buttons = ttk.Frame(top)
         buttons.pack(fill="x", pady=(self.px(8), 0))
         ttk.Button(buttons, text="Cancel", command=lambda: self.close_paste_box(None)).pack(side="right")
-        ttk.Button(buttons, text="Ask the duck", command=self.paste_ask).pack(side="right", padx=self.px(8))
+        ttk.Button(buttons, text="Ask the duck (Ctrl+Enter)", command=self.paste_ask).pack(side="right", padx=self.px(8))
         window.bind("<Escape>", lambda _event: self.close_paste_box(None))
+        # Tab types a tab in the code box, so asking needs a key of its own.
+        window.bind("<Control-Return>", lambda _event: (self.paste_ask(), "break")[1])
         self.paste_text.focus_set()
         self.draw()
 
@@ -412,14 +431,14 @@ class DuckApp:
         return self.paste_text.get("1.0", "end-1c")
 
     def paste_language_code(self):
-        return self.offered_languages()[max(0, self.paste_language.current())]
+        return self.paste_offered[max(0, self.paste_language.current())]
 
     def on_paste_modified(self, _event=None):
         if self.paste_window is None:
             return
         self.paste_text.edit_modified(False)
         if not self.paste_language_touched:
-            offered = self.offered_languages()
+            offered = self.paste_offered
             self.paste_language.current(offered.index(guess_language(self.paste_code(), offered)))
 
     def paste_ask(self):

@@ -75,9 +75,12 @@ def run(argv):
         tell(MESSAGES[error_key])
     if source == "argument":
         settings["duckPath"] = args[0]
-        config.save_config(folder, settings)
 
     app = DuckApp(duck, read_json("responses.json"), settings, folder)
+    if source == "argument":
+        # Saved only once the duck is on screen, so a duck that cannot be shown is
+        # not remembered and tried again at every start.
+        config.save_config(folder, settings)
 
     def crashed(exc_type, exc, trace):
         # An error inside a tkinter callback lands here, not in main()'s handler.

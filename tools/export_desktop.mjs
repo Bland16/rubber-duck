@@ -183,6 +183,10 @@ const HAND_WRITTEN = [
   'x = "café"\nif (x = 1) { }\n',
   '\tint a = 1;\n \tint b = 2\n',
   'const s = `a${b}c`\nconst t = 1;\n',
+  'export default\n[1, 2]\n',
+  'while (go) {\n  break\n  (x)\n}\n',
+  'for (const x of xs) {\n  continue\n  [x]\n}\n',
+  'const a = [1, 2]\nconst b = a.length\n(function () { return b })()\n',
 ];
 
 function allFour(text) {

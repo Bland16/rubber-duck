@@ -20,6 +20,14 @@ def system_dpi():
         return 96
 
 
+def double_click_ms():
+    """The longest gap Windows counts as a double-click, or 500 if it cannot be read."""
+    try:
+        return int(ctypes.windll.user32.GetDoubleClickTime()) or 500
+    except Exception:
+        return 500
+
+
 def work_area():
     """(left, top, right, bottom) of the primary monitor without the taskbar, or None."""
     rect = wintypes.RECT()

@@ -346,7 +346,7 @@ const STATEMENT_WORDS = new Set(['return', 'break', 'continue', 'throw', 'goto',
   'package', 'using']);
 const CONTINUATION_WORDS = new Set(['extends', 'implements', 'throws']);
 // A line ending in one of these is not finished, whatever comes next.
-const OPEN_ENDED_WORDS = /\b(?:else|do|return|typeof|in|of|new|delete|void|throw|case|yield|await|instanceof)$/;
+const OPEN_ENDED_WORDS = /\b(?:else|do|return|typeof|in|of|new|delete|void|throw|case|yield|await|instanceof|default|break|continue)$/;
 const HABIT_MIN_LINES = 5;
 const HABIT_SHARE = 0.8;
 

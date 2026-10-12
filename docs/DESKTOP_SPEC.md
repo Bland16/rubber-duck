@@ -735,3 +735,27 @@ The audit of the web page that accepted decision 8 puts first was done on 2026-1
 - **The spikes** (section 15, step 1) passed on the build machine: both windows take clicks
   only on drawn pixels, and a `.pyzw` opened through Windows' file association starts under
   `pythonw.exe`. Dropping a file onto it was not simulated; the drop handler is registered.
+- **Build audit (2026-10-12).** A fresh auditor found one high and two medium problems, all
+  fixed:
+  - The bubble's "Paste code" button did nothing on a real click: its canvas tag held a
+    space, which tkinter reads as two tags. Tags are now numbered, and the self-test presses
+    "Paste code" and "Close" through the canvas (`press_bubble_button`) and not by calling
+    the handler.
+  - A click on the duck during the thinking pause lost the answer. The answer is now spoken
+    when it is due whatever the duck is doing, and still waits while the paste box is open.
+  - Loading another duck with the paste box open could crash. The paste box is now closed
+    before the duck is swapped and keeps the language list it opened with.
+  Lower findings fixed: the transparent key colour is chosen from 16 candidates, so no palette
+  can use them all; a command-line duck is remembered only after its window has opened; a
+  dragged sitting place is forgotten when the work area changes; a click during the fall puts
+  the duck on the ground first (on the page too); one menu exists at a time; Ctrl+Enter asks
+  the duck from the paste box, whose button says so; the double-click gap is Windows' own
+  setting (`GetDoubleClickTime`), 500 ms if that cannot be read.
+- **Also not in the earlier sections:** the paste box stays on top of other windows and has
+  undo; the duck's cursor is a hand, and a move cursor while dragged; bubble text is
+  `#111111` and its buttons Consolas 10 pt; the bubble is at least 120 px wide inside and
+  keeps 8 px from the screen's edges; the crash box reads "The duck ran into a problem and has
+  to close." with the last line of the error and the path of the details file.
+- **Left as they are:** a duck file from before the art was unified shows its old art on the
+  desktop (the page upgrades it, the desktop loader does not); a Python integer of more than
+  4,300 digits is reported as not parsing.

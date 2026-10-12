@@ -30,7 +30,8 @@ def _half_up(value):
 
 
 class DuckBrain:
-    def __init__(self, duck, pool, bounds, scale, clock, rng, ui=1.0, check=None):
+    def __init__(self, duck, pool, bounds, scale, clock, rng, ui=1.0, check=None,
+                 double_click_ms=DOUBLE_CLICK_MS):
         self.duck = duck
         self.bounds = tuple(bounds)
         self.scale = scale
@@ -38,6 +39,7 @@ class DuckBrain:
         self._clock = clock
         self._rng = rng
         self._check = check
+        self._double_click_ms = double_click_ms
         self._picker = create_picker(pool, rng)
         now = clock()
         self.state = "idle"
@@ -58,7 +60,7 @@ class DuckBrain:
         self._grab = None
         self._dragging = False
         self._paste_open = False
-        self._pending = None            # (result, language) waiting for the thinking pause
+        self._pending = None            # the answer waiting for the thinking pause to end
         self._click_count = 0
         self._last_click_at = None
         left, _, _, _ = self.bounds
@@ -189,19 +191,21 @@ class DuckBrain:
         if self._bubble and self._bubble["close_at"] is not None and now >= self._bubble["close_at"]:
             self._close_bubble(now)
 
+        # The answer is spoken when it is due, whatever the duck is doing by then (a
+        # click during the pause must not lose it). It waits while the paste box is open.
+        if self._pending and now >= self._pending["due"] and not self._paste_open:
+            result, language = self._pending["result"], self._pending["language"]
+            self._pending = None
+            if self.state == "thinking":
+                self._enter("idle", now)
+            lines = compose_hunches(result, self.duck, self._picker)
+            extra = extra_sentence(result, language)
+            if extra:
+                lines[-1] = f"{lines[-1]} {extra}"
+            self._say(lines, now=now)
+
         if self._dragging:
             pass  # the pointer is in charge
-        elif self.state == "thinking":
-            # If the paste box was opened again, the answer waits for it to close.
-            if self._pending and now - self._state_since >= THINKING_MS and not self._paste_open:
-                result, language = self._pending
-                self._pending = None
-                self._enter("idle", now)
-                lines = compose_hunches(result, self.duck, self._picker)
-                extra = extra_sentence(result, language)
-                if extra:
-                    lines[-1] = f"{lines[-1]} {extra}"
-                self._say(lines, now=now)
         elif self.state == "idle" and not still and not self._paste_open:
             if now - self._last_touch > numbers["sleepAfterMs"]:
                 self._enter("sleeping", now)
@@ -348,7 +352,7 @@ class DuckBrain:
             self._enter("landing", now)
 
     def _click(self, now):
-        in_run = self._last_click_at is not None and now - self._last_click_at <= DOUBLE_CLICK_MS
+        in_run = self._last_click_at is not None and now - self._last_click_at <= self._double_click_ms
         self._click_count = self._click_count + 1 if in_run else 1
         self._last_click_at = now
         if self._click_count == 1:
@@ -357,6 +361,8 @@ class DuckBrain:
             self._do_prompt(now)
 
     def _do_squeak(self, now):
+        if self.state == "falling":
+            self.y = self._ground_y()   # finish the fall; the squeak takes over the state
         self.squeak = not self.muted
         self._enter("squeaking", now)
         self._say([self._chatter_line()], now=now)
@@ -393,7 +399,7 @@ class DuckBrain:
         check = self._check
         if check is None:
             from .syntax import check_code as check
-        self._pending = (check(text, language), language)
+        self._pending = {"result": check(text, language), "language": language, "due": now + THINKING_MS}
         self._enter("thinking", now)
 
     # ── Changes from outside ─────────────────────────────────────────────────
@@ -408,6 +414,7 @@ class DuckBrain:
 
     def set_bounds(self, bounds):
         self.bounds = tuple(bounds)
+        self._sit_spot = None   # it may now be off the screen; back to the corner
         if self._target and self._mode() == "strip":
             self._target = (min(self._target[0], self._max_x()), self._ground_y())
         if self.state not in ("walking", "falling") and not self._dragging:

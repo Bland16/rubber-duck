@@ -434,7 +434,7 @@ STATEMENT_WORDS = {'return', 'break', 'continue', 'throw', 'goto', 'import',
 CONTINUATION_WORDS = {'extends', 'implements', 'throws'}
 # A line ending in one of these is not finished, whatever comes next.
 OPEN_ENDED_WORDS = re.compile(
-    r'\b(?:else|do|return|typeof|in|of|new|delete|void|throw|case|yield|await|instanceof)\Z',
+    r'\b(?:else|do|return|typeof|in|of|new|delete|void|throw|case|yield|await|instanceof|default|break|continue)\Z',
     re.ASCII)
 HABIT_MIN_LINES = 5
 HABIT_SHARE = 0.8

@@ -111,6 +111,9 @@ def run_selftest():
                 lines.update(fill(option, app.duck, 1) for option in options)
         need(text in lines, f"the answer is not a semicolon line: {text!r}")
 
+    def check_closed():
+        need(brain.bubble is None, "pressing Close left the bubble open")
+
     def check_carried():
         need(brain.dragging and brain.animation == "carried", "not carried while held")
 
@@ -157,13 +160,13 @@ def run_selftest():
         (300, None, check_start),
         (0, click, check_click),
         (150, click, check_second_click),
-        (100, app.on_bubble_action, check_paste_box),
+        (100, lambda: app.press_bubble_button("Paste code"), check_paste_box),
         (100, ask_java, check_thinking),
         (THINKING_MS + 300, None, check_answer),
         (100, drag_up, check_carried),
         (0, release, None),
         (600, None, check_no_landing),
-        (0, app.on_bubble_close, None),
+        (0, lambda: app.press_bubble_button("Close"), check_closed),
         (100, drag_up, check_carried),
         (0, release, None),
         (LANDING_MS + 1800, None, check_landed),
