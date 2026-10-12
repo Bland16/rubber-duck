@@ -73,14 +73,14 @@ section as written only once the user approves the spec.
 | C | A settings file, `%APPDATA%\BuildADuck\config.json`, holds the last duck's path, mute, pause and size. | Needed for B and so mute survives a restart. |
 | D | Three more menu items: "Paste code...", "Pause motion", and "Size" (Small, Medium, Large). | Another way into the paste box; a way to stop movement; screens differ. |
 | E | The duck naps. It falls asleep after `sleepAfterMs` (20 to 60 seconds, by Energy) without being clicked, dragged or asked anything; it wakes by itself after 60 seconds, or at once when touched, and then walks and chatters again until the next nap. | The page's rule (asleep until there is activity on the page) has no good desktop equivalent: tied to the whole computer, the duck would only sleep when nobody is there; tied to the duck alone, it would fall asleep within a minute and never walk or chatter again until clicked. |
-| F | JavaScript is checked with rules R1, R2 and R4 only (brackets, strings and comments, `=` in a condition). No semicolon rule. | The user was told "the same rules as Java and C", but the semicolon rule misfires on JavaScript written without semicolons, which is common. Measured cost: without the browser's parser, 11 of the 16 broken JavaScript test files are caught, against 16 of 16 on the page. To stay honest, when the desktop duck finds nothing in JavaScript it adds a fixed sentence after its usual "looks clean" line: "I can only check JavaScript lightly here." (Its "not sure" lines are not used for this: they are worded for a suspected missing semicolon.) |
+| F | JavaScript is checked with rules R1, R2, R4 and R7 (brackets, strings and comments, `=` in a condition, and the semicolon-habit rule the user asked for on 2026-10-12, which the page has too). Not Java's semicolon rule. | The user was told "the same rules as Java and C", but Java's semicolon rule misfires on JavaScript written without semicolons, which is common; R7 only speaks when the code itself uses semicolons, or when two lines join by accident. Measured cost of having no parser: 15 of the 20 broken JavaScript test files are caught, against 20 of 20 on the page; the five missed are other kinds of syntax error. To stay honest, when the desktop duck finds nothing in JavaScript it adds a fixed sentence after its usual "looks clean" line: "I can only check JavaScript lightly here." (Its "not sure" lines are not used for this: they are worded for a suspected missing semicolon.) |
 | G | For Python, when Python's parser reports an error the heuristics cannot name, the duck says its usual "does not parse" line followed by "Python points at line N." | The existing lines for that case never mention a line, and Python knows it. |
 | H | A file limit of 2,000,000 bytes, and four plain messages for files that do not load (section 6). | The page has no limit because it reads in the browser; a desktop program should not read an arbitrary large file into memory. |
 | I | A `path` duck walks along the bottom. A `sit` duck that is dragged stays where it is put until the program restarts. | The first matches the page when no path is drawn. The second matches the page. |
 | J | The built `.pyzw` file is committed to the repository, with `desktop/build.py` and `desktop/README.md`. | GitHub Pages serves only committed files. |
 | K | The instructions sit in a collapsed block titled "Take your duck home (Windows)", with a "See the source" link and the sentence "It makes no network connections." | Most visitors will not want it; the claim is true and reassures the ones who do. |
 | L | Supported Python: 3.9 or newer, with a message if older. Tested only on the build machine's 3.12. | A floor has to be stated. |
-| M | `js/syntax/index.js` and `js/syntax/javascript.js` gain an option to skip the browser parser. The page never uses it. | The Python port is compared with the JavaScript rules without the parser; this is how those values are produced. |
+| M | `js/syntax/index.js` and `js/syntax/javascript.js` have an option to skip the browser parser (added with R7 on 2026-10-12). The page never uses it. | The Python port is compared with the JavaScript rules without the parser; this is how those values are produced. |
 | N | One new Node tool and one new Node test (section 4), and a `--selftest` argument. | They keep the two implementations and the built file from drifting. |
 | O | A squeak WAV is written to the temporary folder at start and left there. | The standard library can play a sound only from a file without blocking. |
 | P | For Python, when Python's parser accepts the code, bracket, string and `=` hunches are dropped but an inconsistent-indentation hunch is kept. A pasted fragment that is indented as a whole is un-indented before parsing. | The parser is the better judge of the first three; mixed tabs and spaces can be legal and still a mistake. People paste the inside of a function. |
@@ -131,7 +131,8 @@ desktop/
     brain.py           DuckBrain: the state machine and geometry, with no tkinter (section 7.4)
     syntax/
       __init__.py      guess_language, check_code, MAX_PASTE, LANGUAGE_ORDER
-      common.py        scan, check_brackets, check_condition_assign, check_semicolons, ...
+      common.py        scan, check_brackets, check_condition_assign, check_semicolons,
+                       check_semicolon_habit, ...
       java.py  c.py  javascript.py  python.py
     config.py          load_config(folder), save_config(folder, config)
     sound.py           squeak_samples() (pure), write_squeak(path), play(path)
@@ -168,13 +169,13 @@ Paradigm: plain functions and dictionaries in the pure modules, mirroring the Ja
 classes, `DuckBrain` in `brain.py` and `DuckApp` in `app.py`. Python naming (`snake_case`);
 the duck dictionary keeps the file's own key names (`codeFocus`).
 
+Already in the web code (added with rule R7): `check(text, { useParser = true } = {})` in
+`js/syntax/javascript.js`, which with `useParser: false` behaves exactly as when R6 is
+unavailable, and `checkCode(text, language, options)` in `js/syntax/index.js`, which passes
+`options` on. The page calls `checkCode` with two arguments.
+
 Changes to existing web code:
 
-- `check(text, { useParser = true } = {})` in `js/syntax/javascript.js`. With
-  `useParser: false` it behaves exactly as when R6 is unavailable.
-- `checkCode(text, language, options)` in `js/syntax/index.js` passes `options` to the
-  language's `check`. The other three checkers ignore it. The page calls `checkCode` with two
-  arguments, as now.
 - `index.html`, `css/app.css`: the instructions block (section 12).
 - `.gitattributes`: `*.pyzw binary`.
 
@@ -422,8 +423,8 @@ asking for it again brings the open one forward. Not available in buddy mode (Co
 **Java and C/C++**: the same findings (rule, kind, line) and the same `unsure` flag as the
 JavaScript code for the same text.
 
-**JavaScript**: exactly what the page gives with `useParser: false` (R1, R2 and R4 findings,
-and its `unsure` value). `use_parser` has no effect. When the status is `ok` and there are no
+**JavaScript**: exactly what the page gives with `useParser: false` (R1, R2, R4 and R7
+findings, and its `unsure` value). R7 is web spec section 21's semicolon-habit rule. `use_parser` has no effect. When the status is `ok` and there are no
 findings, `extra_sentence` returns "I can only check JavaScript lightly here." and `app.py`
 puts it after the duck's `clean` line, separated by a space.
 
@@ -684,7 +685,7 @@ behaviour on a downloaded copy.
 1. Spikes, before anything else, each a throwaway script: a transparent always-on-top window
    that takes clicks only on drawn pixels; a second such window for the bubble; a `.pyzw`
    that starts by double-click and receives a dropped file. If one fails, stop and raise it.
-2. The JavaScript changes, the exporter and its freshness test.
+2. The exporter and its freshness test.
 3. The pure modules with their parity tests.
 4. `loader`, `config`, `sound`, `brain` with their tests.
 5. `app.py` and the self-test.

@@ -1142,3 +1142,24 @@ Each of these differs from revision 3 as approved.
   frames and animations, and its palette is topped up to twelve colours; its name, colours,
   personality, languages and walking mode are kept, and pixels redrawn on the old frames are
   lost. A Classic share link is now about 900 characters.
+- **R7, a semicolon rule for JavaScript (2026-10-12, at the user's request).** Leaving out
+  semicolons is legal in JavaScript, so R3 never ran on it. R7 gives a `semicolon` hunch in
+  two cases only:
+  - **Habit.** At least 5 lines of the (blanked) text end with `;`, and those are at least 80%
+    of them plus the lines R3's confident test would call missing. Then each of those missing
+    lines is a finding.
+  - **Joined lines.** A line that passes R3's candidate tests (a) to (g), does not end in one
+    of `else do return typeof in of new delete void throw case yield await instanceof`, and
+    is followed by a line starting with `(`, `[` or a backtick outside a string. Flagged
+    whatever the habit, because JavaScript reads the two lines as one statement.
+  R7 runs after the other rules and is skipped when they left an R1, R2 or R6 finding. Its
+  findings are added to R4's, also when R6 passed. For R3's data-brace test, a `{` after the
+  word `default` now counts as data (`export default {`). `checkSemicolons` returns the
+  joined-line candidates as `hazards`; Java and C/C++ results are unchanged.
+  `checkCode(text, language, options)` passes `options` to the checker, and JavaScript's
+  `check` takes `{ useParser }`; the page passes neither.
+  Measured before adopting it: no finding on the 18 valid JavaScript corpus files or on 33
+  of this project's own source files, with and without the parser; and of 611 single
+  semicolons removed from that code, 372 were found, none on the wrong line. Corpus
+  additions (written by the builder, not independently): four broken files
+  `semicolon_01` to `04` and two valid files, `task_queue.js` and `summary.js`.

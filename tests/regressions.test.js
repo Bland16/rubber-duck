@@ -143,3 +143,35 @@ test('walking speed is its own slider and defaults to energy for older ducks', a
     assert.equal(validateDuck({ ...fast, personality: { ...fast.personality, speed: bad } }).reason, 'personality');
   }
 });
+
+test('R7: a JavaScript semicolon hunch needs a habit or a joined line', () => {
+  const semis = (text, options) => checkCode(text, 'javascript', options).findings
+    .filter((f) => f.kind === 'semicolon').map((f) => f.line);
+  const ended = (n) => Array.from({ length: n }, (_, i) => `const v${i} = ${i};`).join('\n');
+
+  // Habit: at least five lines ending in a semicolon, and at least 80% of the lot.
+  assert.deepEqual(semis(`${ended(5)}\nconst last = 1\nconsole.log(last);`), [6]);
+  assert.deepEqual(semis(`${ended(3)}\nconst last = 1\nconsole.log(last);`), []); // only four
+  assert.deepEqual(semis(`${ended(8)}\nconst a = 1\nconst b = 2\nlog(a, b);`), [9, 10]); // 9 of 11
+  assert.deepEqual(semis(`${ended(7)}\nconst a = 1\nconst b = 2\nlog(a, b)`), []); // 7 of 10
+  // No habit, no hunch: code written without semicolons.
+  assert.deepEqual(semis('const a = 1\nconst b = 2\nlet c = a + b\nconsole.log(c)\nexport default c'), []);
+
+  // Joined lines are flagged whatever the habit, and with or without the parser.
+  const joined = 'const a = [1, 2]\nconst b = a.length\n(function () { return b })()';
+  assert.deepEqual(semis(joined), [2]);
+  assert.deepEqual(semis(joined, { useParser: false }), [2]);
+  assert.deepEqual(semis('const t = tag\n`text`'), [1]);
+  assert.deepEqual(semis('const n = list\n[0]'), [1]);
+  // Not joined: the first line cannot end there anyway, or the second defends itself.
+  assert.deepEqual(semis('function f() {\n  return\n  (1 + 2)\n}'), []);
+  assert.deepEqual(semis('if (ready)\n  (async () => {})()'), []);
+  assert.deepEqual(semis('const a = 1\n;[1, 2].forEach(log)'), []);
+  assert.deepEqual(semis('const total = add(\n  1,\n  2\n)\nlog(total)'), []);
+
+  // Quiet when the code is broken in a way that makes line endings unreliable.
+  assert.deepEqual(semis(`${ended(6)}\nconst x = (1\nlog(x);`), []);
+  assert.deepEqual(semis(`${ended(6)}\nconst s = "open\nlog(s);`), []);
+  // Other languages are untouched: R3 still does their semicolons.
+  assert.equal(checkCode('int a = 1\nint b = 2;', 'java').findings[0].rule, 'R3');
+});

@@ -30,10 +30,11 @@ export function guessLanguage(text, offered) {
   return best;
 }
 
-export function checkCode(text, language) {
+// options go to the language's checker; only JavaScript's reads any (useParser).
+export function checkCode(text, language, options) {
   if (!text.trim()) return { status: 'empty', findings: [], unsure: false };
   if (text.length > MAX_PASTE) return { status: 'too-long', findings: [], unsure: false };
-  const { findings, unsure } = CHECKERS[language](text);
+  const { findings, unsure } = CHECKERS[language](text, options);
   findings.sort((a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind)
     || (a.line ?? 0) - (b.line ?? 0));
   return { status: 'ok', findings, unsure };

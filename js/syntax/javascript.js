@@ -1,19 +1,24 @@
-import { LANGUAGES, scan, checkBrackets, checkConditionAssign } from './common.js';
+import { LANGUAGES, scan, checkBrackets, checkConditionAssign, checkSemicolonHabit } from './common.js';
 
 const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
 
-export function check(text) {
+// useParser: false behaves as when R6 is unavailable. The page never passes it;
+// it is there so the rules can be compared with their Python port.
+export function check(text, { useParser = true } = {}) {
   const scanned = scan(text, LANGUAGES.javascript);
   const structural = [...scanned.findings];
   const bracket = checkBrackets(scanned.blanked);
   if (bracket) structural.push(bracket);
   const assign = checkConditionAssign(scanned.blanked);
 
-  const parsed = parse(text, scanned);
+  const parsed = useParser ? parse(text, scanned) : 'unavailable';
   let findings;
   if (parsed === 'ok') findings = assign;
   else if (parsed === 'unavailable' || structural.length) findings = [...structural, ...assign];
   else findings = [{ rule: 'R6', kind: 'parse', line: null }, ...assign];
+  // R7 reads line endings, which mean little once a bracket or string is broken.
+  const broken = structural.length > 0 || findings.some((f) => f.kind === 'parse');
+  if (!broken) findings.push(...checkSemicolonHabit(scanned));
   return { findings, unsure: false };
 }
 

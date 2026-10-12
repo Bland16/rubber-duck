@@ -345,6 +345,10 @@ const BLOCK_WORDS = new Set(['if', 'else', 'for', 'while', 'do', 'switch', 'try'
 const STATEMENT_WORDS = new Set(['return', 'break', 'continue', 'throw', 'goto', 'import',
   'package', 'using']);
 const CONTINUATION_WORDS = new Set(['extends', 'implements', 'throws']);
+// A line ending in one of these is not finished, whatever comes next.
+const OPEN_ENDED_WORDS = /\b(?:else|do|return|typeof|in|of|new|delete|void|throw|case|yield|await|instanceof)$/;
+const HABIT_MIN_LINES = 5;
+const HABIT_SHARE = 0.8;
 
 export function firstWord(line) {
   const match = /^[\s}]*([A-Za-z_]\w*)/.exec(line);
@@ -352,7 +356,9 @@ export function firstWord(line) {
 }
 
 // R3: missing semicolons in Java and C-family code. Returns confident findings
-// and whether any unconfident candidate was seen.
+// and whether any unconfident candidate was seen. Also returns `hazards`, used
+// only by R7: 1-based numbers of candidate lines whose next line starts with
+// `(`, `[` or a backtick.
 export function checkSemicolons(scanned) {
   const lines = scanned.blanked.split('\n').map((l) => l.replace(/\r$/, ''));
   const trimmed = lines.map((l) => l.trim());
@@ -367,6 +373,7 @@ export function checkSemicolons(scanned) {
 
   const stack = [];
   const findings = [];
+  const hazards = [];
   let unsure = false;
 
   lines.forEach((text, index) => {
@@ -382,7 +389,7 @@ export function checkSemicolons(scanned) {
         if (ch === '{') {
           const before = text.slice(0, col).trim();
           const prev = prevNonBlank(index);
-          entry.data = /(?:[=,(\[{\]]|\breturn)$/.test(before)
+          entry.data = /(?:[=,(\[{\]]|\breturn|\bdefault)$/.test(before)
             || (before === '' && prev !== -1 && trimmed[prev].endsWith('='))
             || /\benum\b/.test(before)
             || (before === '' && prev !== -1 && /\benum\b/.test(trimmed[prev]));
@@ -430,13 +437,30 @@ export function checkSemicolons(scanned) {
       const before = lines[closesHere.line].slice(0, closesHere.col).trimEnd();
       isCall = /[A-Za-z0-9_]$/.test(before);
     }
+    if (next !== -1 && '([`'.includes(trimmed[next][0]) && !scanned.startsInString[next]
+      && !OPEN_ENDED_WORDS.test(line)) hazards.push(index + 1);
     const shaped = bareEquals || STATEMENT_WORDS.has(word) || endsIncrement || isCall;
     const startsStatement = next === -1 || /^[A-Za-z_}@#]/.test(trimmed[next]);
     if (shaped && startsStatement) findings.push({ rule: 'R3', kind: 'semicolon', line: index + 1 });
     else unsure = true;
   });
 
-  return { findings, unsure };
+  return { findings, unsure, hazards };
+}
+
+// R7: semicolons in JavaScript, where leaving them out is legal. Two cases are
+// still worth a hunch.
+//  - Habit: the code ends nearly all its statements with a semicolon, so the few
+//    lines that do not are probably slips.
+//  - Joined lines: a line with no semicolon followed by one starting with `(`,
+//    `[` or a backtick. JavaScript reads the two as one statement.
+export function checkSemicolonHabit(scanned) {
+  const semi = checkSemicolons(scanned);
+  const missing = semi.findings.map((f) => f.line);
+  const ended = scanned.blanked.split('\n').filter((l) => l.trimEnd().endsWith(';')).length;
+  const habit = ended >= HABIT_MIN_LINES && ended / (ended + missing.length) >= HABIT_SHARE;
+  const lines = new Set([...(habit ? missing : []), ...semi.hazards]);
+  return [...lines].sort((a, b) => a - b).map((line) => ({ rule: 'R7', kind: 'semicolon', line }));
 }
 
 export function braceLanguageCheck(text, config) {
