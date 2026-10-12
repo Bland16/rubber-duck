@@ -140,8 +140,8 @@ async function start() {
   const pressed = (ids, value) => ids.forEach((id) => document.getElementById(id).setAttribute('aria-pressed', String(value)));
 
   function applyPrefs() {
-    if (prefs.theme) document.documentElement.dataset.theme = prefs.theme;
-    else delete document.documentElement.dataset.theme;
+    // Light unless the visitor has pressed Theme; the system's setting is not followed.
+    document.documentElement.dataset.theme = prefs.theme || 'light';
     pressed(['mute', 'viewer-mute'], prefs.muted);
     pressed(['pause', 'viewer-pause'], prefs.paused);
     const toggle = document.getElementById('controls-toggle');
@@ -165,7 +165,7 @@ async function start() {
   ['pause', 'viewer-pause'].forEach((id) => document.getElementById(id).addEventListener('click', toggle('paused')));
   document.getElementById('controls-toggle').addEventListener('click', toggle('controlsOpen'));
   document.getElementById('theme').addEventListener('click', () => {
-    const current = prefs.theme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const current = prefs.theme || 'light';
     prefs.theme = current === 'dark' ? 'light' : 'dark';
     savePrefs();
     applyPrefs();

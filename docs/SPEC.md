@@ -1177,3 +1177,7 @@ Each of these differs from revision 3 as approved.
     check of the block, run by hand.
   - R7's joined-line test also ignores a line ending in `default`, `break` or `continue`.
   - A click on a falling duck puts it on the ground before it squeaks.
+- **Light by default (2026-10-12, at the user's request).** The page opens in the light theme
+  whatever the system's colour scheme is. The Theme button switches to dark and back, and the
+  choice is remembered as before. `<html>` carries `data-theme="light"` in the markup so
+  the first paint is light too.
