@@ -759,3 +759,6 @@ The audit of the web page that accepted decision 8 puts first was done on 2026-1
 - **Left as they are:** a duck file from before the art was unified shows its old art on the
   desktop (the page upgrades it, the desktop loader does not); a Python integer of more than
   4,300 digits is reported as not parsing.
+- **Right-click menu in the paste box (2026-10-12).** tkinter's text box has no context menu,
+  so the paste box adds one: Cut, Copy, Paste, Select all. Ctrl+V, Ctrl+C, Ctrl+X and Ctrl+A
+  worked already.

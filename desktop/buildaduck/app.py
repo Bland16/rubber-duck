@@ -416,6 +416,23 @@ class DuckApp:
         scroll.pack(side="right", fill="y")
         self.paste_text.pack(side="left", fill="both", expand=True)
         self.paste_text.bind("<<Modified>>", self.on_paste_modified)
+        # tkinter's text box has no right-click menu of its own, and people paste that way.
+        edit = tk.Menu(window, tearoff=0)
+        edit.add_command(label="Cut", command=lambda: self.paste_text.event_generate("<<Cut>>"))
+        edit.add_command(label="Copy", command=lambda: self.paste_text.event_generate("<<Copy>>"))
+        edit.add_command(label="Paste", command=lambda: self.paste_text.event_generate("<<Paste>>"))
+        edit.add_separator()
+        edit.add_command(label="Select all", command=lambda: self.paste_text.tag_add("sel", "1.0", "end-1c"))
+        self.paste_edit_menu = edit
+
+        def show_edit_menu(event):
+            self.paste_text.focus_set()
+            try:
+                edit.tk_popup(event.x_root, event.y_root)
+            finally:
+                edit.grab_release()
+
+        self.paste_text.bind("<Button-3>", show_edit_menu)
         ttk.Label(top, text=NOTICE).pack(anchor="w")
         buttons = ttk.Frame(top)
         buttons.pack(fill="x", pady=(self.px(8), 0))
