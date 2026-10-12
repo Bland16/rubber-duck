@@ -324,6 +324,7 @@ export default {
     "I do not migrate. I have a shelf.",
     "Someone threw me a whole baguette once. Poor planning on their part. Great day for me.",
     "The pond ducks eat off the ground. I say that without judgement. Some judgement.",
+    "I have one facial expression. It has covered every situation so far.",
     "Somebody squeezed me underwater once. I am still letting it out.",
     "The duck next door has a little hat. I am not threatened. I have looked into hats.",
     "The sponge gets replaced every month. I have outlasted eleven. I do not learn their names.",
@@ -987,6 +988,7 @@ export default {
   "chatter.chaos.spicy.general": [
     "Geese are just ducks who went to law school.",
     "The cat pushed me off the edge of the bath. I landed upright. The cat has not recovered.",
+    "My owner bought a second duck. It is blue. Ducks are not blue. I have said nothing. Loudly.",
     "I do not swim. I am taken places by water. There is a difference and it is dignity.",
     "Somebody squeezed me underwater once. I filled up. I have carried that bathwater ever since.",
     "Frogs get to be wet and dry. I asked how. They said legs. Smug.",
@@ -1313,6 +1315,7 @@ export default {
     "The other ducks quack. I squeak. It is a lonelier vowel.",
     "Bread arrived. I watched it sink. I cannot eat. I watched.",
     "Bath time is at seven. I am told this as if I had other plans.",
+    "Someone gave me a tiny black hat. It is the only time I have felt seen.",
     "A candle by the bath. For ambience, they said. At last, someone understands.",
     "The bubble bath smells of lavender. I smell of factory. We make it work.",
     "I have never blinked. My eyes are paint. I have seen everything since Tuesday.",
@@ -1323,6 +1326,7 @@ export default {
   ],
   "chatter.goth.spicy.general": [
     "You took me on holiday once. A hotel bath. Whiter. Colder. I was myself there.",
+    "Black nail varnish, on my beak. You were fourteen. Best day I have had.",
     "I was won at a fair. Hooked from a trough. The others are still going round.",
     "They bought a second duck. It is pink. We do not acknowledge each other.",
     "The label on my base says 'not a toy'. I have never recovered.",
