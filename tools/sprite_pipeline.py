@@ -54,14 +54,18 @@ RECOLOURS = {
     "Ghost": ("#ffffff", "#c9cfe0"),
 }
 
+# Frame numbers are those of FINAL_NAMES, the frames unify() produces.
+FINAL_NAMES = ["neutral", "blink", "thinking", "happy", "squeak", "asleep",
+               "walk 1", "walk 2", "walk 3", "walk 4", "carried", "landing", "front"]
+
 ANIMATIONS = {
-    "idle": {"seq": [5, 5, 5, 4], "fps": 2, "motion": "none"},
-    "walk": {"seq": [8, 9, 10, 11], "fps": 10, "motion": "bob"},
-    "squeak": {"seq": [2, 0], "fps": 6, "motion": "hop"},
-    "sleep": {"seq": [3], "fps": 1, "motion": "bob"},
-    "thinking": {"seq": [5], "fps": 4, "motion": "shake"},
-    "carried": {"seq": [12], "fps": 4, "motion": "shake"},
-    "landing": {"seq": [13], "fps": 4, "motion": "none"},
+    "idle": {"seq": [0, 0, 0, 1], "fps": 2, "motion": "none"},
+    "walk": {"seq": [6, 7, 8, 9], "fps": 10, "motion": "bob"},
+    "squeak": {"seq": [4, 0], "fps": 6, "motion": "hop"},
+    "sleep": {"seq": [5], "fps": 1, "motion": "bob"},
+    "thinking": {"seq": [2], "fps": 4, "motion": "shake"},
+    "carried": {"seq": [10], "fps": 4, "motion": "shake"},
+    "landing": {"seq": [11], "fps": 4, "motion": "none"},
 }
 
 
@@ -308,6 +312,103 @@ def largest_piece(arr):
     return out
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# One body for every pose
+# ─────────────────────────────────────────────────────────────────────────────
+
+# The sheets were drawn separately and their ducks differ in length and head shape.
+# unify() redraws every pose on one body, the round one of the "blink" pose, and
+# changes only the part that should differ: an eye, the beak, the legs, a splash.
+# The edits are written as rows of palette slots in hex ("a" is slot 10), so they
+# depend on the palette below; unify() stops if the palette is not this one.
+UNIFY_PALETTE = {1: "#fefdec", 2: "#f2d50d", 3: "#d79f13", 4: "#e7771c", 6: "#c25506",
+                 8: "#952a1a", 10: "#040001", 11: "#a2b9ff", 12: "#74caf9"}
+SLOT_CHARS = ".123456789abcdef"
+LEG_SLOTS = (4, 6, 8, 9)       # oranges and the browns found in feet
+LEG_ROW = 27                   # the outline row under the belly; legs hang from it
+
+
+def put(frame, row, col, cells):
+    for i, ch in enumerate(cells):
+        if ch != " ":
+            frame[row, col + i] = SLOT_CHARS.index(ch)
+
+
+def unify(poses, palette):
+    """poses: the extracted frames (standing, walking, squeaking, asleep, blink,
+    thinking, happy, front, walk 1-4, carried, landing). Returns FINAL_NAMES' frames."""
+    for slot, colour in UNIFY_PALETTE.items():
+        if hex_of(palette[slot - 1]) != colour:
+            fail(f"palette slot {slot} is {hex_of(palette[slot - 1])}, not {colour}; "
+                 "the hand-written edits in unify() need revisiting")
+    blink, happy, front = poses[4], poses[6], poses[7]
+
+    def neutral():
+        f = blink.copy()
+        put(f, 7, 18, "a1")        # an open eye with a highlight
+        put(f, 8, 16, "22aa")
+        return f
+
+    def thinking():
+        f = neutral()
+        put(f, 5, 18, "aa")        # a raised brow
+        return f
+
+    def squeak():
+        f = neutral()              # the beak opens
+        put(f, 9, 21, "a44aaaa")
+        put(f, 10, 20, "a4444444a")
+        put(f, 11, 19, "a888aaaaa")
+        put(f, 12, 19, "a8888a..")
+        put(f, 13, 19, "a444666a")
+        put(f, 14, 20, "aaaaaa")
+        return f
+
+    def asleep():
+        f = blink.copy()           # closed eye and a small Z
+        put(f, 3, 26, "aaa")
+        put(f, 4, 27, "a")
+        put(f, 5, 26, "aaa")
+        return f
+
+    def walk(source):
+        f = neutral()              # the legs of a walk pose under the shared body
+        legs = source.copy()
+        legs[np.isin(legs, (8, 9))] = 6
+        for x in range(SIZE):
+            v = legs[LEG_ROW, x]
+            if v in LEG_SLOTS or (v and not f[LEG_ROW, x]):
+                f[LEG_ROW, x] = v
+        f[LEG_ROW + 1:] = legs[LEG_ROW + 1:]
+        return f
+
+    def carried():
+        f = neutral()              # a wide eye
+        put(f, 6, 17, "111")
+        put(f, 7, 17, "1a1")
+        put(f, 8, 17, "111")
+        return f
+
+    def landing():
+        f = happy.copy()           # the happy face and a splash at both sides
+        for row, col, cells in [(24, 2, "b"), (25, 1, "b"), (26, 3, "c"), (27, 1, "ccb"), (28, 1, "bbb"),
+                                (24, 28, "b"), (25, 29, "b"), (26, 27, "c"), (27, 26, "bcc"), (28, 27, "bb")]:
+            for i, ch in enumerate(cells):
+                if not f[row, col + i]:
+                    f[row, col + i] = SLOT_CHARS.index(ch)
+        return f
+
+    out = [neutral(), blink.copy(), thinking(), happy.copy(), squeak(), asleep(),
+           walk(poses[8]), walk(poses[9]), walk(poses[10]), walk(poses[11]),
+           carried(), landing(), front.copy()]
+    for name, frame in zip(FINAL_NAMES, out):
+        cols = np.where(frame.any(axis=0))[0]
+        rows = np.where(frame.any(axis=1))[0]
+        if cols.min() < 1 or cols.max() > 30 or rows.min() < 2:
+            fail(f"{name} leaves no motion margin: columns {cols.min()}-{cols.max()}, top row {rows.min()}")
+    return out
+
+
 def recolour(palette, body_slots, light, dark):
     out = list(palette)
     ordered = sorted(body_slots, key=lambda s: -luma(palette[s - 1]))
@@ -476,6 +577,8 @@ def main():
             frames.append(canvas)
         PITCH_RANGE = first_pitch
 
+    frames = unify(frames, centres)
+
     palettes = {"Classic": centres}
     for name, (light, dark) in RECOLOURS.items():
         palettes[name] = recolour(centres, body_slots, light, dark)
@@ -501,7 +604,7 @@ def main():
         f.write(f"export const BODY_SLOTS = {json.dumps(body_slots)};\n")
         f.write("export const PRESETS = " + json.dumps(presets, indent=2) + ";\n")
     write_contact_sheet(frames, list(palettes.values()))
-    write_icon(frames[7], centres)
+    write_icon(frames[FINAL_NAMES.index("front")], centres)
     print(f"  [OK] {OUT_JS}\n  [OK] {OUT_SHEET}")
 
 

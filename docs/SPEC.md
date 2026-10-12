@@ -135,11 +135,13 @@ binary form of it (section 5.3).
   "palette": ["#f2d50d", "#000000"],
   "frames": ["<base64>"],
   "animations": {
-    "idle":     { "seq": [5, 5, 5, 4], "fps": 2, "motion": "none"  },
-    "walk":     { "seq": [8, 9, 10, 11], "fps": 10, "motion": "bob" },
-    "squeak":   { "seq": [2, 0],       "fps": 6, "motion": "hop"   },
-    "sleep":    { "seq": [3],          "fps": 1, "motion": "bob"   },
-    "thinking": { "seq": [5],          "fps": 4, "motion": "shake" }
+    "idle":     { "seq": [0, 0, 0, 1], "fps": 2,  "motion": "none"  },
+    "walk":     { "seq": [6, 7, 8, 9], "fps": 10, "motion": "bob"   },
+    "squeak":   { "seq": [4, 0],       "fps": 6,  "motion": "hop"   },
+    "sleep":    { "seq": [5],          "fps": 1,  "motion": "bob"   },
+    "thinking": { "seq": [2],          "fps": 4,  "motion": "shake" },
+    "carried":  { "seq": [10],         "fps": 4,  "motion": "shake" },
+    "landing":  { "seq": [11],         "fps": 4,  "motion": "none"  }
   },
   "personality": { "sass": 50, "energy": 50, "helpfulness": 50, "chattiness": 50, "codeFocus": 50 },
   "languages": ["javascript", "python"],
@@ -268,13 +270,10 @@ what it does and what it produced.
 `data/presets.js` exports `PRESETS` (four duck objects), `BODY_SLOTS` (the palette slot numbers
 classified as body) and `BELLY_ROW`.
 
-Frame order: 0 standing, 1 walking, 2 squeaking, 3 asleep, 4 blink, 5 thinking, 6 happy,
-7 front view, 8 to 11 a four-frame walk cycle, the first four poses of
-`tools/source/walk3.png`, 12 carried and 13 landing from `tools/source/ducks2.png`. Frames 0 to 3 are one drawing family and 4 to 6 another, with slightly different
-body shapes. The default idle and thinking sequences therefore use only 4 and 5, and walk uses 8
-to 11, and squeak 2 and 0. Going from idle to walk still changes family, and the duck's outline
-shifts slightly when it does; this is accepted for the preset art. Frames 6 and 7 are not used
-by a default animation.
+Frame order: 0 neutral, 1 blink, 2 thinking, 3 happy, 4 squeak, 5 asleep, 6 to 9 the walk
+cycle, 10 carried, 11 landing, 12 front view. Every frame except the front view shares one
+body; see "One body for every pose" in section 21. Frames 3 and 12 are not used by a default
+animation.
 
 ### Presets
 
@@ -1126,3 +1125,20 @@ Each of these differs from revision 3 as approved.
     gear's tooltip "Duck controls"; "You can also drag the duck anywhere with the mouse.";
     "No path yet, so it walks along the bottom. Press Draw the path."; "That was too short.
     Press and drag a longer line."
+- **One body for every pose (2026-10-12, at the user's request).** The source sheets were
+  drawn separately, so the duck's length and head shape changed from one animation to the
+  next. The pipeline now extracts the poses as before and then `unify()` redraws them on one
+  body, the round one of the blink pose, changing only what should differ:
+  - neutral: an open eye; thinking: a raised brow; happy and blink: as drawn
+  - squeak: the beak opens; asleep: the closed eye and a small Z
+  - walk 1 to 4: the legs of the four `walk3.png` poses under the shared body
+  - carried: a wide eye; landing: the happy face with a splash at both sides
+  - front view: unchanged
+  The edits are written in the pipeline as rows of palette slots and stop the build if the
+  palette changes. Presets now have 13 frames in the order given in section 6, and 12
+  colours. The original standing, walking, open-beak and lying-down drawings are no longer
+  in the presets. `upgradeDuck` is now one rule: a duck that still holds the old walking
+  frame (recognised by hash, with a fixture in `tests/fixtures/`) is given the current
+  frames and animations, and its palette is topped up to twelve colours; its name, colours,
+  personality, languages and walking mode are kept, and pixels redrawn on the old frames are
+  lost. A Classic share link is now about 900 characters.
