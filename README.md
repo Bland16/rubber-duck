@@ -33,7 +33,7 @@ These are not part of the site.
 
 | Command | What it does | Needs |
 |---|---|---|
-| `python tools/sprite_pipeline.py` | Converts `tools/source/ducks.png` into `data/presets.js`, `assets/favicon.png` and a contact sheet in `tools/out/` | Python 3 with Pillow and numpy |
+| `python tools/sprite_pipeline.py` | Converts the sheets in `tools/source/` into `data/presets.js`, `assets/favicon.png` and a contact sheet in `tools/out/` | Python 3 with Pillow and numpy |
 | `node tools/make_og.mjs` | Renders `assets/og.png`, the link-preview image | `npm install`, then `npx playwright install chromium` |
 | `node tools/record_demo.mjs` | Records `docs/demo.mp4` | the above, plus ffmpeg |
 

@@ -1,4 +1,4 @@
-// Tracing the path the duck walks: a full-window overlay the visitor draws on.
+// Tracing the path the duck walks: a full-window modal dialog the visitor draws on.
 
 const MIN_GAP = 14; // px between kept points
 const MIN_LENGTH = 80; // px; shorter than this is treated as a slip
@@ -38,13 +38,14 @@ export function tracePath() {
   const help = document.getElementById('path-help-text');
   const cancel = document.getElementById('path-cancel');
   const ctx = canvas.getContext('2d');
+  const layer = document.getElementById('duck-layer'); // the duck's own coordinate space
   const returnTo = document.activeElement;
   let points = null;
 
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
   help.textContent = 'Press and drag to draw the path your duck walks.';
-  overlay.hidden = false;
+  overlay.showModal();
+  canvas.width = overlay.clientWidth;
+  canvas.height = overlay.clientHeight;
   cancel.focus();
 
   function redraw() {
@@ -63,12 +64,13 @@ export function tracePath() {
 
   return new Promise((resolve) => {
     function finish(result) {
-      overlay.hidden = true;
+      if (overlay.open) overlay.close();
       overlay.removeEventListener('pointerdown', down);
       overlay.removeEventListener('pointermove', move);
       overlay.removeEventListener('pointerup', up);
       overlay.removeEventListener('pointercancel', up);
-      document.removeEventListener('keydown', key, true);
+      overlay.removeEventListener('cancel', stop);
+      window.removeEventListener('resize', stop);
       cancel.removeEventListener('click', stop);
       if (returnTo && returnTo.focus) returnTo.focus();
       resolve(result);
@@ -85,7 +87,7 @@ export function tracePath() {
     }
     function up() {
       if (!points) return;
-      const path = toPath(points, window.innerWidth, window.innerHeight);
+      const path = toPath(points, layer.clientWidth, layer.clientHeight);
       points = null;
       if (path) finish(path);
       else {
@@ -93,17 +95,14 @@ export function tracePath() {
         redraw();
       }
     }
-    function key(event) {
-      if (event.key !== 'Escape') return;
-      event.stopPropagation();
-      finish(null);
-    }
+    // Cancel, Escape, or a window that changed size under the drawing.
     function stop() { finish(null); }
     overlay.addEventListener('pointerdown', down);
     overlay.addEventListener('pointermove', move);
     overlay.addEventListener('pointerup', up);
     overlay.addEventListener('pointercancel', up);
-    document.addEventListener('keydown', key, true);
+    overlay.addEventListener('cancel', stop);
+    window.addEventListener('resize', stop);
     cancel.addEventListener('click', stop);
   });
 }

@@ -15,9 +15,9 @@ just want a buddy.
 
 In scope for v1:
 
-- pixel editor for a 32x32 duck with five animations
+- pixel editor for a 32x32 duck with seven animations
 - four preset ducks to start from
-- five personality sliders, derived trait words, a personality label, language choice
+- five personality sliders and a walking speed slider, derived trait words, a personality label, language choice
 - the living duck: walking, squeak, speech box, paste-code flow
 - heuristic syntax check for Java, JavaScript, Python, C/C++
 - export: sprite sheet PNG, animated GIF, `.duck.json`, share link, share card PNG
@@ -75,6 +75,7 @@ js/startup.js           chooseStartupDuck, adopt, restore (pure)
 js/store.js             the current duck and the undo history (pure)
 js/sprite-render.js     draws a frame or a sheet to a canvas at an integer scale
 js/editor.js            pixel editor, frame strip, animation panel
+js/path-draw.js         the draw-a-path dialog and its pure helpers
 js/personality.js       sliders -> trait words, label, buddy mode, behaviour numbers (pure)
 js/syntax/common.js     shared scanner
 js/syntax/javascript.js
@@ -153,9 +154,9 @@ The animation values shown are the preset defaults.
 | `v` | Integer. Must equal 1. |
 | `name` | String. Trimmed during validation; the trimmed value is kept. At most 24 UTF-16 code units after trimming. Empty displays as "Duck". |
 | `palette` | Array of 1 to 15 strings matching `^#[0-9a-f]{6}$`. |
-| `frames` | Array of 1 to 16 strings. Each is standard base64 of exactly 1024 bytes: one byte per pixel, row by row from the top left. Byte 0 is transparent. Byte n (1 to 15) is `palette[n-1]`. A byte above `palette.length` is invalid. |
-| `animations` | An object with exactly the five keys shown. Each value has exactly the keys `seq`, `fps`, `motion`. `seq`: array of 1 to 8 integers, each a valid frame index. `fps`: integer 1 to 12. `motion`: one of `none`, `bob`, `hop`, `shake`. |
-| `personality` | An object with exactly the five keys shown, each an integer from 0 to 100 that is a multiple of 5. |
+| `frames` | Array of 1 to 20 strings. Each is standard base64 of exactly 1024 bytes: one byte per pixel, row by row from the top left. Byte 0 is transparent. Byte n (1 to 15) is `palette[n-1]`. A byte above `palette.length` is invalid. |
+| `animations` | An object with the five keys shown, plus `carried` and `landing` (optional on the way in; see section 21). Each value has exactly the keys `seq`, `fps`, `motion`. `seq`: array of 1 to 8 integers, each a valid frame index. `fps`: integer 1 to 12. `motion`: one of `none`, `bob`, `hop`, `shake`. |
+| `personality` | An object with the five keys shown, plus `speed` (optional on the way in; see section 21), each an integer from 0 to 100 that is a multiple of 5. |
 | `languages` | Array of 0 to 4 distinct values from `java`, `javascript`, `python`, `c`. |
 | `roam` | `strip` (the duck walks along the bottom strip), `page` (it walks all over the page), `sit` (it walks to the top right corner and stays) or `path` (it walks back and forth along a path the visitor draws). |
 
@@ -198,7 +199,9 @@ compressed with `deflate-raw`, then base64url without padding.
 | per animation | in the order idle, walk, squeak, sleep, thinking: sequence length, the indices (one byte each), fps, motion (0 none, 1 bob, 2 hop, 3 shake) |
 | 5 | sass, energy, helpfulness, chattiness, codeFocus |
 | 1 | languages bit mask: java 1, javascript 2, python 4, c 8 |
-| 1 | roam: 0 strip, 1 page |
+| 1 | roam: 0 strip, 1 page, 2 sit, 3 path |
+| per extra animation | carried, then landing, in the same form as the five above (absent in older links) |
+| 1 | speed (absent in older links) |
 
 `encodeDuck(duck)` and `decodeDuck(payload)` are async. `decodeDuck` returns the same result
 shape as `validateDuck`, with two extra reasons: `too-long` (payload over 20,000 characters, or
@@ -216,7 +219,8 @@ entry greater than k. The last remaining frame cannot be deleted.
 
 ## 6. Art pipeline (authoring time only)
 
-`tools/sprite_pipeline.py` converts `tools/source/ducks.png` into `data/presets.js`. It is run
+`tools/sprite_pipeline.py` converts the sheets in `tools/source/` (`ducks.png`, `walk3.png`,
+`ducks2.png`) into `data/presets.js`. It is run
 by hand when the art changes. The site never runs Python.
 
 It is adapted from `C:\RETIRED_Coding_Projects\campus_school\sprite_tools_new.py`, reusing
@@ -348,7 +352,7 @@ preset. (So a hand-drawn duck restored by autosave still counts as edited after 
   changing it recolours every pixel using that slot. "Add colour" appends a slot, up to 15.
 - **Frame strip**: thumbnails of all frames. Selecting one makes it current. "Duplicate frame"
   appends a copy of the current frame (disabled at 16). "Delete frame" follows section 5.4.
-- **Animations**: for each of the five animations, the sequence shown as frame thumbnails with
+- **Animations**: for each of the seven animations, the sequence shown as frame thumbnails with
   add-step, remove-step and a per-step frame choice; an fps number input; a motion select; and
   a looping preview. "Reset to default" sets that animation's sequence, fps and motion to the
   Classic preset's values, replacing any index that is not a current frame with 0.
@@ -365,7 +369,7 @@ Every other control is a native button, input or select with a visible label.
 
 ## 9. Personality
 
-Five sliders: native range inputs, 0 to 100 in steps of 5, each with a visible label. The trait
+Five personality sliders and a sixth, Walking speed (section 21): native range inputs, 0 to 100 in steps of 5, each with a visible label. The trait
 word is in the slider's `aria-valuetext` and in the chips below, not beside the slider.
 
 | Slider | 0 to 30 | 35 to 65 | 70 to 100 | What it changes |
@@ -394,7 +398,7 @@ badge beside it.
 
 **Languages.** Four checkboxes in this order: Java, JavaScript, Python, C/C++.
 
-**Where it walks.** A pair of radio buttons, "Along the bottom" (`roam` `strip`, the default)
+**Where it walks.** Four radio buttons (the two below, and `sit` and `path` from section 21), "Along the bottom" (`roam` `strip`, the default)
 and "All over the page" (`roam` `page`).
 
 The panel shows the label, the five trait words as chips, and the badge when buddy mode is on.
@@ -1093,3 +1097,32 @@ Each of these differs from revision 3 as approved.
   It is optional on the way in and defaults to the duck's energy, so older ducks walk as
   they did; a validated duck always has it. In a link it is one byte after the carried and
   landing animations.
+- **Third build audit (2026-10-10 to 12).** A fresh auditor checked everything since the
+  second audit and found no high and five medium problems, all fixed:
+  - The demo video had grown to 43 s; it is 23 s again.
+  - A speech box opened while the duck was falling or landing no longer lets it walk off.
+  - A duck that stays put (`sit` mode) now chatters: the chatter check also runs each time
+    its idle pause ends.
+  - Opening the duck controls while the duck walks towards them shortens the walk, so it does
+    not stop on the panel.
+  - The draw-a-path overlay is now a native modal `<dialog>`, so the page behind it cannot be
+    reached. It opens only from the "Draw the path" button, never from choosing the radio
+    button, and closes without saving if the window is resized.
+  Lower findings fixed: no drag cursor or `touch-action: none` in view-only mode; a drag ends
+  if pointer capture is lost or the page switches mode; path points are measured against the
+  duck's own layer; `upgradeDuck` also runs on loaded duck files, opened links and the
+  restored backup; the strict belly-row test is back; a compiled Python file is no longer in
+  the repository.
+- **Accepted as they are.**
+  - A `sit` duck, a `path` duck at rest and a dropped duck can cover controls under them;
+    dragging the duck away uncovers them. Only `page` mode avoids controls.
+  - With motion off: a `sit` duck jumps to its corner; a duck dropped in `page` or `path`
+    mode shows the landing and then returns to the bottom; a duck dropped while talking or
+    thinking in `strip` mode returns to the bottom at once.
+  - A drag wakes a sleeping duck and cancels a walk. Drawing a new path restarts from its
+    first point. A resize stops a path walk and forgets a dragged `sit` spot.
+  - A stored path that fails its checks is discarded without a message.
+  - New wording on the page: the speed slider's spoken values Slow, Medium and Fast; the
+    gear's tooltip "Duck controls"; "You can also drag the duck anywhere with the mouse.";
+    "No path yet, so it walks along the bottom. Press Draw the path."; "That was too short.
+    Press and drag a longer line."

@@ -58,10 +58,11 @@ await page.check('#languages input[value="java"]');
 await pause(900);
 
 // Click the duck, then ask it about some code.
-await page.click('#duck');
+// force: the duck is walking, and waiting for it to hold still stretches the video.
+await page.click('#duck', { force: true });
 await pause(2200);
 await page.click('#speech-close');
-await page.dblclick('#duck');
+await page.dblclick('#duck', { force: true });
 await pause(1600);
 await page.click('#speech-action');
 await pause(500);

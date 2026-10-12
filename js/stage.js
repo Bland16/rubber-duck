@@ -172,13 +172,17 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
     return atEnd ? null : points[pathIndex];
   }
 
-  function enterIdle(now = performance.now()) {
-    enter('idle', now);
+  function maybeChatter(now) {
     const { chatterEveryMs } = behaviour(duck().personality);
     if (!motionOff() && chatterEveryMs !== null && now - lastSpeechClosed >= chatterEveryMs
       && !dialogOpen() && !speechOpen) {
       say([chatterLine()]);
     }
+  }
+
+  function enterIdle(now = performance.now()) {
+    enter('idle', now);
+    maybeChatter(now);
   }
 
   function animationName() {
@@ -215,6 +219,11 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
       else if (crowded || now - stateSince > b.idlePauseMs) {
         const next = chooseTarget();
         if (next) walkTo(next, now);
+        else {
+          // Staying put (a sitting duck): the pause still ends, so it can chatter.
+          stateSince = now;
+          maybeChatter(now);
+        }
       }
     } else if (state === 'walking') {
       if (still) {
@@ -250,7 +259,8 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
       const length = (animation.seq.length * 1000) / animation.fps;
       if (now - stateSince >= Math.max(LANDING_MS, length)) {
         clampToHost();
-        enterIdle(now);
+        if (speechOpen) enter('talking', now);
+        else enterIdle(now);
       }
     } else if (state === 'squeaking') {
       const length = (animation.seq.length * 1000) / animation.fps;
@@ -465,6 +475,7 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
   }
   duckButton.addEventListener('pointerup', drop);
   duckButton.addEventListener('pointercancel', drop);
+  duckButton.addEventListener('lostpointercapture', drop);
 
   duckButton.addEventListener('click', (event) => {
     if (swallowClick) return; // the end of a drag, not a click
@@ -521,6 +532,11 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
     },
     refresh() {
       updateName();
+      if (mode() === 'strip') {
+        const { maxX } = bounds();
+        if (target) target.x = Math.min(target.x, maxX);
+        if (state !== 'falling') position.x = Math.min(position.x, maxX);
+      }
       clampToHost();
       if (speechOpen) showPage(); // re-arms or cancels the auto-close after a pause change
     },
@@ -530,6 +546,8 @@ export function createStage({ store, picker, prefs, reducedMotion }) {
       host = element;
       scale = nextScale;
       viewer = isViewer;
+      drop();
+      duckButton.classList.toggle('in-viewer', isViewer);
       if (duckButton.parentElement !== element) element.append(duckButton);
       if (isViewer && pasteDialog.open) pasteDialog.close('cancel');
       closeSpeech();

@@ -23,14 +23,20 @@ const clearFragment = () => history.replaceState(null, '', location.pathname + l
 async function start() {
   const prefs = storage.loadPrefs();
   const fallback = PRESETS[0];
-  const loadSaved = () => upgradeDuck(storage.loadDuck(), PRESETS);
+  const upgrade = (duck) => upgradeDuck(duck, PRESETS);
+  const loadSaved = () => upgrade(storage.loadDuck());
+  // A link made by an earlier version gets the same upgrade as a saved duck.
+  const decodeLink = async (payload) => {
+    const result = await decodeDuck(payload);
+    return result.ok ? { ...result, duck: upgrade(result.duck) } : result;
+  };
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const viewOnly = window.matchMedia(VIEW_ONLY);
   const shortWindow = window.matchMedia('(max-height: 520px)'); // matches the shorter stage in the CSS
 
   const payload = payloadOf(location.hash);
   const first = chooseStartupDuck({
-    payloadResult: payload === null ? null : await decodeDuck(payload),
+    payloadResult: payload === null ? null : await decodeLink(payload),
     saved: loadSaved(),
     fallback,
   });
@@ -56,7 +62,7 @@ async function start() {
   }
 
   function restorePrevious() {
-    const backup = storage.loadBackup();
+    const backup = upgrade(storage.loadBackup());
     if (!backup) return;
     const swapped = restore({ duck: store.get(), backup });
     storage.saveBackup(swapped.backup);
@@ -111,7 +117,7 @@ async function start() {
       return;
     }
     flush();
-    const chosen = chooseStartupDuck({ payloadResult: await decodeDuck(next), saved: loadSaved(), fallback });
+    const chosen = chooseStartupDuck({ payloadResult: await decodeLink(next), saved: loadSaved(), fallback });
     mode = chosen.mode;
     if (mode === 'own') clearFragment();
     store.replace(chosen.duck, 'load');
@@ -177,7 +183,7 @@ async function start() {
   // The traced path belongs to this browser's window, so it is kept with the
   // preferences and not in the duck.
   const pathStatus = document.getElementById('path-status');
-  const showPath = () => { pathStatus.textContent = prefs.path ? '' : 'No path yet, so it walks along the bottom.'; };
+  const showPath = () => { pathStatus.textContent = prefs.path ? '' : 'No path yet, so it walks along the bottom. Press Draw the path.'; };
   async function drawPath() {
     const path = await tracePath();
     if (path) {
@@ -188,9 +194,6 @@ async function start() {
     showPath();
   }
   document.getElementById('draw-path').addEventListener('click', drawPath);
-  document.getElementById('roam').addEventListener('change', (event) => {
-    if (event.target.value === 'path' && event.target.checked && !prefs.path) drawPath();
-  });
   showPath();
   reducedMotion.addEventListener('change', () => stage.refresh());
 

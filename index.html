@@ -191,13 +191,13 @@
     </div>
   </div>
 
-  <div id="path-overlay" class="path-overlay" hidden>
+  <dialog id="path-overlay" class="path-overlay" aria-label="Draw the duck's path">
     <canvas id="path-canvas"></canvas>
     <div class="path-help">
       <p id="path-help-text">Press and drag to draw the path your duck walks.</p>
       <button type="button" id="path-cancel">Cancel</button>
     </div>
-  </div>
+  </dialog>
 
   <div id="duck-layer" class="duck-layer">
     <button type="button" id="duck" class="duck"><canvas id="duck-canvas" aria-hidden="true"></canvas></button>
