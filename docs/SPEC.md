@@ -1181,3 +1181,14 @@ Each of these differs from revision 3 as approved.
   whatever the system's colour scheme is. The Theme button switches to dark and back, and the
   choice is remembered as before. `<html>` carries `data-theme="light"` in the markup so
   the first paint is light too.
+- **More lines, chosen by a critic (2026-10-12, at the user's request).** The pool went from
+  464 lines to 918. Four writers, one per voice, wrote 672 new lines. Four critics, one per
+  voice and none of them a writer, then scored every line, old and new mixed without labels,
+  from 1 to 5: chatter and buddy lines needed 4 or 5 to stay, hunches and state lines 3. The
+  user's rule was applied as a hard reject: no line built on the duck's name, its colour or
+  how it looks. The critics turned down 86 new lines and 163 existing ones. The user then
+  kept 28 of the rejected lines, the stock programmer jokes, and shortened one ("A Friday
+  deploy? Bold."). One hunch key was left empty and was refilled with three lines the same
+  critic approved. Chatter keys now hold 13 to 21 lines and buddy keys 11 or 12. The key
+  set, the placeholder rules and the 125-character limit of section 11.8 are unchanged. The
+  desktop duck's copy of the pool is regenerated from the same file.
